@@ -3,6 +3,7 @@
         ".compileconf": "toml",
         "*.msg": "plaintext",
         "*.txt": "plaintext",
-        "tgr.h": "c"
+        "tgr.h": "c",
+        "imgs.h": "c"
     }
 }

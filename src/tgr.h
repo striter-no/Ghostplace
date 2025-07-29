@@ -38,7 +38,7 @@ struct str_clr_specs {
 
 struct tgr_app {
     struct terminal __raw_term;
-    i32 FPS;
+    i32 fps;
     i32 FORCE_FPS;
 
     byte __frame_changed;
@@ -50,8 +50,8 @@ struct tgr_app {
     u64 ticks;
     f64 deltaTime;
 
-    byte *INPUT;
-    u64   INPUT_LEN;
+    byte *input;
+    u64   input_len;
 
     byte FORCE_STOP;
     struct pixel *pix_displ;
@@ -79,7 +79,7 @@ void tgr_pixel(
     struct tgr_app *app,
     struct rgb color,
 
-    u64 x, u64 y
+    u64 x, u64 y, byte bgrst
 );
 
 // ================== STRINGS ====================

@@ -30,7 +30,7 @@ void tgr_run(
 
     while (!__TGR_MTB_CTRL_C_PRESSED && !app->FORCE_STOP){
         if (app->__millis_passed >= 1000){
-            app->FPS = app->__frames;
+            app->fps = app->__frames;
             app->__frames = 0;
             app->__millis_passed = 0;
         }
@@ -55,12 +55,11 @@ void tgr_run(
         }
 
         term_read(
-            &app->INPUT, 
-            &app->INPUT_LEN
+            &app->input, 
+            &app->input_len
         );
         
         update(app);
-        free(app->INPUT);
 
         if (!app->__frame_changed)
             goto __tgr_upd_end;
@@ -69,7 +68,7 @@ void tgr_run(
         size_t allbuff_s = 0;
         char *allbytes = NULL;
         for (u64 y = 0; y < app->TERM_HEIGHT; y++){
-            for (u64 x = 0; x < app->TERM_WIDTH; x++){
+            for (u64 x = 0; x < app->TERM_WIDTH - 1; x++){
                 struct pixel curr = app->pix_displ[y * app->TERM_WIDTH + x];
                 
                 char buff[180] = {0};
@@ -119,11 +118,11 @@ void tgr_run(
                     break;
                 }
             }
-            // if (y != app->TERM_HEIGHT - 1){
-            //     allbytes = (char*)realloc(allbytes, allbuff_s + 1);
-            //     allbytes[allbuff_s] = '\n';
-            //     allbuff_s++;
-            // }
+            if (y != app->TERM_HEIGHT - 1){
+                allbytes = (char*)realloc(allbytes, allbuff_s + 1);
+                allbytes[allbuff_s] = '\n';
+                allbuff_s++;
+            }
         }
 
         term_write(allbytes, allbuff_s);
@@ -161,9 +160,9 @@ void tgr_init(
     struct tgr_app *app
 ){
     term_new(&app->__raw_term);
-    app->INPUT = NULL;
-    app->INPUT_LEN = 0;
-    app->FPS = 0;
+    app->input = NULL;
+    app->input_len = 0;
+    app->fps = 0;
     app->FORCE_FPS = -1;
 
     app->ticks = 0;
@@ -177,7 +176,7 @@ void tgr_init(
         &app->TERM_WIDTH, 
         &app->TERM_HEIGHT
     );
-    // app->TERM_WIDTH--;
+    app->TERM_WIDTH--;
 
     u64 size = sizeof(struct pixel) * app->TERM_WIDTH * app->TERM_HEIGHT;
     app->pix_displ = (struct pixel*)malloc(size);
@@ -194,7 +193,7 @@ void tgr_end(
     struct tgr_app *app
 ){
     __TGR_MTB_CTRL_C_PRESSED = 0;
-    free(app->INPUT);
+    free(app->input);
     free(app->pix_displ);
     term_reset(&app->__raw_term);
 }
@@ -300,7 +299,7 @@ void tgr_pixel(
     struct tgr_app *app,
     struct rgb color,
 
-    u64 x, u64 y
+    u64 x, u64 y, byte bgrst
 ){
     struct rgb bgc = app->pix_displ[
         y * app->TERM_WIDTH + x
@@ -314,6 +313,9 @@ void tgr_pixel(
     app->pix_displ[
         y * app->TERM_WIDTH + x
     ].bgcolor = color;
+    app->pix_displ[
+        y * app->TERM_WIDTH + x
+    ].back_reset = bgrst;
 }
 
 struct pixel *tgr_tpx_get(

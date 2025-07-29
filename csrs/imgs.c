@@ -1,5 +1,5 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include "../src/imgs.h"
+#include "../src/imgm/imgs.h"
 
 void img_load(const char *path, struct stb_img *img, int preffred_channels){
     img->data = stbi_load(

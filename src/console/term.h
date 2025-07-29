@@ -3,7 +3,7 @@
 #include <termios.h>
 #include <stdint.h>
 #include <stddef.h>
-#include "int.h"
+#include "../int.h"
 
 #define MAX_BUFFER 65536
 

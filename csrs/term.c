@@ -1,4 +1,4 @@
-#include "../src/term.h"
+#include "../src/console/term.h"
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <errno.h>

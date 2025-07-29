@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stb_image.h"
-#include "tgr.h"
+#include "../console/tgr.h"
 
 struct stb_img {
     int width;

@@ -1,4 +1,4 @@
-#include "../src/tgr.h"
+#include "../src/console/tgr.h"
 #include <time.h>
 
 int __TGR_MTB_CTRL_C_PRESSED = 0;

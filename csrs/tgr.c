@@ -1,4 +1,4 @@
-#include "../src/console/tgr.h"
+#include <console/tgr.h>
 #include <time.h>
 
 int __TGR_MTB_CTRL_C_PRESSED = 0;
@@ -47,9 +47,11 @@ void tgr_run(
                     .bgcolor.r = -1,
                     .bgcolor.g = -1,
                     .bgcolor.b = -1,
-                    .ch = ' ',
+                    .unich = ' ',
                     .fore_reset = 0,
-                    .back_reset = 0
+                    .back_reset = 0,
+                    .postfix = {0},
+                    .prefix = {0}
                 }, x, y);
             }
         }
@@ -70,9 +72,13 @@ void tgr_run(
         for (u64 y = 0; y < app->TERM_HEIGHT; y++){
             for (u64 x = 0; x < app->TERM_WIDTH - 1; x++){
                 struct pixel curr = app->pix_displ[y * app->TERM_WIDTH + x];
-                
-                char buff[180] = {0};
-                if (curr.bgcolor.r != -1){
+
+                char buff[250] = {0};
+
+                if (curr.prefix[0] != '\0')
+                    strcat(buff, curr.prefix);
+
+                if (curr.bgcolor.r != -1) {
                     char lbuf[90];
                     sprintf(
                         lbuf, 
@@ -82,23 +88,34 @@ void tgr_run(
                     strcat(buff, lbuf);
                 }
 
-                if (curr.ch != ' '){
-                    char lbuf[90];
-                    sprintf(
-                        lbuf, 
-                        "\033[38;2;%d;%d;%dm%c", 
-                        curr.color.r, curr.color.g, curr.color.b, 
-                        curr.ch
-                    );
-                    strcat(buff, lbuf);
+                if (curr.unich != ' ') {
+                    uint8_t utf8_buffer[4];
+                    ssize_t utf8_len = utf8proc_encode_char(curr.unich, utf8_buffer);
+                    
+                    if (utf8_len > 0) {
+                        char lbuf[90];
+                        sprintf(
+                            lbuf, 
+                            "\033[38;2;%d;%d;%dm", 
+                            curr.color.r, curr.color.g, curr.color.b
+                        );
+                        strcat(buff, lbuf);
+                        
+                        size_t current_len = strlen(buff);
+                        memcpy(buff + current_len, utf8_buffer, utf8_len);
+                        buff[current_len + utf8_len] = '\0';
+                    }
                 } else {
-                    u64 sz = strlen(buff);
-                    buff[sz] = curr.ch;
+                    size_t sz = strlen(buff);
+                    buff[sz] = ' ';
                     buff[sz + 1] = '\0';
                 }
                 
                 if (curr.fore_reset) strcat(buff, FORE_RST);
                 if (curr.back_reset) strcat(buff, BACK_RST);
+
+                if (curr.postfix[0] != '\0')
+                    strcat(buff, curr.postfix);
 
                 allbytes = (char*)realloc(allbytes, allbuff_s + strlen(buff));
                 memcpy(allbytes + allbuff_s, buff, strlen(buff));
@@ -106,7 +123,7 @@ void tgr_run(
 
                 int same = 1;
                 for (u64 i = x; i < app->TERM_WIDTH - 1; i++){
-                    if (app->pix_displ[y * app->TERM_WIDTH + i].ch != ' ' ||
+                    if (app->pix_displ[y * app->TERM_WIDTH + i].unich != ' ' ||
                         app->pix_displ[y * app->TERM_WIDTH + i].bgcolor.r != -1
                     ){
                         same = 0;
@@ -186,6 +203,24 @@ void tgr_init(
         abort();
     }
 
+    for (u64 y = 0; y < app->TERM_HEIGHT; y++){
+        for (u64 x = 0; x < app->TERM_WIDTH; x++){
+            app->pix_displ[y * app->TERM_WIDTH + x] = (struct pixel){
+                .color.r = 255,
+                .color.g = 255,
+                .color.b = 255,
+                .bgcolor.r = -1,
+                .bgcolor.g = -1,
+                .bgcolor.b = -1,
+                .unich = ' ',
+                .fore_reset = 0,
+                .back_reset = 0,
+                .postfix = {0},
+                .prefix = {0}
+            };
+        }
+    }
+
     app->__frame_changed = 0;
 }
 
@@ -202,46 +237,48 @@ void tgr_end(
 
 void string_insert(
     struct tgr_app *app,
-    const char *string,
+    const int32_t *string,
 
     u64 x, u64 y
 ){
-    u64 sz = strlen(string);
+    u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
         struct pixel *pix = tgr_tpx_get(app, x + i, y);
-        if (!app->__frame_changed || pix->ch != string[i])
+        if (!app->__frame_changed || pix->unich != string[i])
             app->__frame_changed = 1;
         else
             continue;
 
-        pix->ch = string[i];
+        pix->unich = string[i];
 
     }
 }
 
 void rgb_string_insert(
     struct tgr_app *app,
-    const char *string,
+    const int32_t *string,
 
     u64 x, u64 y,
     struct rgb color
 ){
-    u64 sz = strlen(string);
+    u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
         struct pixel *pix = tgr_tpx_get(app, x + i, y);
-        if (!app->__frame_changed || pix->ch != string[i])
+        if (!app->__frame_changed || pix->unich != string[i])
             app->__frame_changed = 1;
         else
             continue;
 
-        pix->ch = string[i];
+        pix->unich = string[i];
         pix->color = color;
+        // if (sz == 0) pix->color = color;
+        // if (sz - 1 == i) pix->fore_reset = 1;
     }
 }
 
 void spec_string_insert(
     struct tgr_app *app,
-    const char *string,
+    const int32_t *string,
 
     u64 x, u64 y,
     struct str_clr_specs specs
@@ -249,19 +286,22 @@ void spec_string_insert(
     byte has_frg = specs.frg_size > 0;
     byte has_bg = specs.bg_size > 0;
 
-    u64 sz = strlen(string);
+    u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
         struct pixel *pix = tgr_tpx_get(app, x + i, y);
-        if (!app->__frame_changed || pix->ch != string[i])
+        if (!app->__frame_changed || pix->unich != string[i])
             app->__frame_changed = 1;
         else
             continue;
 
-        pix->ch = string[i];
+        pix->unich = string[i];
         if (has_frg)
             pix->color = specs.frg_specs[i];
         if (has_bg)
             pix->bgcolor = specs.bg_specs[i];
+
+        if (has_frg && (sz - 1 == i)) pix->fore_reset = 1; 
+        if (has_bg && (sz - 1 == i)) pix->back_reset = 1;
     }
 }
 
@@ -274,7 +314,7 @@ byte pix_cmp(struct pixel *p1, struct pixel *p2){
            p1->bgcolor.r == p2->bgcolor.r && 
            p1->bgcolor.g == p2->bgcolor.g && 
            p1->bgcolor.b == p2->bgcolor.b && 
-           p1->ch == p2->ch;
+           p1->unich == p2->unich;
 }
 
 void tgr_tpix_set(

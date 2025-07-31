@@ -4,6 +4,11 @@
         "*.msg": "plaintext",
         "*.txt": "plaintext",
         "tgr.h": "c",
-        "imgs.h": "c"
+        "imgs.h": "c",
+        "chrono": "cpp",
+        "random": "cpp",
+        "limits": "cpp",
+        "valarray": "cpp",
+        "algorithm": "cpp"
     }
 }

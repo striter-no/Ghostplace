@@ -1,6 +1,5 @@
-#include <math.h>
-#include "src/tgr.h"
-#include "src/imgs.h"
+#include <console/tgr.h>
+#include <imgm/imgs.h>
 struct stb_img ghost, ghostlabel;
 
 void update(struct tgr_app *app){
@@ -8,20 +7,25 @@ void update(struct tgr_app *app){
         app, 
         &ghost, 
         floor(app->TERM_WIDTH / 2.f - ghost.width), 
-        app->TERM_HEIGHT * 0.1f
+        app->TERM_HEIGHT * 0.1f,
+        (struct rgb){170, 170, 170}
     );
 
     img_insert(
         app, 
         &ghostlabel, 
         floor(app->TERM_WIDTH / 2.f - ghostlabel.width), 
-        app->TERM_HEIGHT * 0.1f + ghost.height + 1
+        app->TERM_HEIGHT * 0.1f + ghost.height + 1,
+        (struct rgb){170, 170, 170}
     );
 
     char fpsbuff[20];
     sprintf(fpsbuff, "%d", app->fps);
 
-    rgb_string_insert(app, fpsbuff, 0, 0, (struct rgb){.r = 100, .g = 50, .b = 150});
+    int32_t *unistr;
+    utf8_conv(fpsbuff, &unistr);
+    rgb_string_insert(app, unistr, 0, 0, (struct rgb){100, 50, 150});
+    free(unistr);
 }
 
 int main(){
@@ -37,4 +41,5 @@ int main(){
     tgr_end(&app);
 
     img_free(&ghost);
+    img_free(&ghostlabel);
 }

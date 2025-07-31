@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <math.h>
+#include <utf8.h>
 
 #define ALL_RST  "\033[0m"
 #define FORE_RST "\033[39m"
@@ -23,8 +24,11 @@ struct rgb {
 struct pixel {
     struct rgb color;
     struct rgb bgcolor;
-    char ch;
+    u32 unich;
     
+    u32 prefix[15];
+    u32 postfix[15];
+
     int fore_reset;
     int back_reset;
 };
@@ -50,6 +54,8 @@ struct tgr_app {
     u64 ticks;
     f64 deltaTime;
 
+    utf8proc_uint8_t *utf_input;
+    
     byte *input;
     u64   input_len;
 
@@ -85,14 +91,14 @@ void tgr_pixel(
 // ================== STRINGS ====================
 void string_insert(
     struct tgr_app *app,
-    const char *string,
+    const int32_t *string,
 
     u64 x, u64 y
 );
 
 void rgb_string_insert(
     struct tgr_app *app,
-    const char *string,
+    const int32_t *string,
 
     u64 x, u64 y,
     struct rgb color
@@ -100,7 +106,7 @@ void rgb_string_insert(
 
 void spec_string_insert(
     struct tgr_app *app,
-    const char *string,
+    const int32_t *string,
 
     u64 x, u64 y,
     struct str_clr_specs specs

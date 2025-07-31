@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-gcc-14 -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -lm \
+gcc-14 -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -I src -lm \
 && printf "\n\n" \
 && valgrind --leak-check=yes --track-origins=yes ./"$1"
 

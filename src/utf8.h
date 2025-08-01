@@ -14,6 +14,8 @@
  */
 int utf8_conv(const uint8_t *utf8_cs, int32_t **wide_cs);
 
+int utf8_nconv(const uint8_t *utf8_cs, int32_t **wide_cs, u64 byte_len);
+
 /**
  * Преобразует массив code points (int32_t) в UTF-8 строку
  * 

@@ -15,7 +15,7 @@ void __print_buffer(
                 printf("%.2x ", (int)buffer[rm]);
                 rm++;
             } else {
-                printf("00");
+                printf("-- ");
             }
         }
         

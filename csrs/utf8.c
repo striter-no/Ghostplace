@@ -53,6 +53,58 @@ int utf8_conv(const uint8_t *utf8_cs, int32_t **wide_cs) {
     return 0;
 }
 
+int utf8_nconv(const uint8_t *utf8_cs, int32_t **wide_cs, u64 byte_len) {
+    // Проверка входных параметров
+    if (!utf8_cs || !wide_cs) {
+        return -1;
+    }
+    
+    // Подсчитываем количество символов в строке (первый проход)
+    size_t count = 0;
+    const uint8_t *p = utf8_cs;
+    utf8proc_int32_t codepoint;
+    i64 char_len;
+    u64 original_byte_len = byte_len;
+    
+    while (byte_len > 0) {
+        char_len = utf8proc_iterate(p, byte_len, &codepoint);
+        if (char_len <= 0) {
+            return (int)char_len; // Ошибка декодирования UTF-8
+        }
+        count++;
+        p += char_len;
+        byte_len -= char_len;
+    }
+    
+    // Выделяем память для массива code points (включая место для нуля)
+    *wide_cs = (int32_t *)malloc((count + 1) * sizeof(int32_t));
+    if (!*wide_cs) {
+        return -2; // Ошибка выделения памяти
+    }
+    
+    // Заполняем массив (второй проход)
+    p = utf8_cs;
+    byte_len = original_byte_len;
+    int32_t *out = *wide_cs;
+    
+    while (byte_len > 0) {
+        char_len = utf8proc_iterate(p, byte_len, &codepoint);
+        if (char_len <= 0) {
+            free(*wide_cs);
+            *wide_cs = NULL;
+            return (int)char_len;
+        }
+        *out++ = (int32_t)codepoint;
+        p += char_len;
+        byte_len -= char_len;
+    }
+    
+    // Добавляем завершающий ноль
+    *out = 0;
+    
+    return 0;
+}
+
 int cstr_conv(const int32_t *wide_cs, uint8_t **utf8_cs) {
     // Проверка входных параметров
     if (!wide_cs || !utf8_cs) {

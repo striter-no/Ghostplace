@@ -1,11 +1,26 @@
 #include <console/tgr.h>
+#include <console/keyboard.h>
 #include <imgm/imgs.h>
 
 #include <web/widgets/widget.h>
 
 struct Widget *main_cnt = NULL;
+static struct Keyboard kb;
 
 void update(struct tgr_app *app){
+
+    byte has_input = kb_process_input(
+        &kb, app->input, app->input_len
+    );
+
+    if (has_input){
+        struct Key tmp;
+        get_pressed_key(&kb, &tmp);
+
+        if (key_cmp(tmp, keyc("в"))){
+            app->FORCE_STOP = 1;
+        }
+    }
 
     draw_widget(app, main_cnt);
 
@@ -22,7 +37,10 @@ void update(struct tgr_app *app){
 int main(){
     struct tgr_app app;
     tgr_init(&app);
+    app.background_clr = (struct rgb){28, 28, 28};
     app.FORCE_FPS = 60;
+
+    create_kboard(&kb);
 
     u64 uid;
     struct Widget *box = NULL; create_widget(&box, 
@@ -66,5 +84,6 @@ int main(){
     free_widget(main_cnt);
     free(main_cnt);
 
+    free_keyboard(&kb);
     stbi_image_free(data);
 }

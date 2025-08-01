@@ -42,3 +42,11 @@ m - Min
 
 #define x_f32   FLT_MAX
 #define x_f64   DBL_MAX
+
+#ifndef min
+#define min(a, b) ((a) > (b) ? (b) : (a))
+#endif
+
+#ifndef max
+#define max(a, b) ((a) < (b) ? (b) : (a))
+#endif

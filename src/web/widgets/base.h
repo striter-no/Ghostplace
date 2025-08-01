@@ -5,14 +5,6 @@
 #include <utf8.h>
 #include <int.h>
 
-#ifndef min
-#define min(a, b) ((a) > (b) ? (b) : (a))
-#endif
-
-#ifndef max
-#define max(a, b) ((a) < (b) ? (b) : (a))
-#endif
-
 #define __SYMBOLS_BOX_ONE "┌┐└┘─│"
 #define __SYMBOLS_BOX_DOUBLE "╔╗╚╝═║"
 #define __SYMBOLS_BOX_ROUNDED "╭╮╰╯─│"

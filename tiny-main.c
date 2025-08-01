@@ -1,11 +1,13 @@
 #include <console/tgr.h>
 #include <console/keyboard.h>
-#include <imgm/imgs.h>
+#include <console/mouse.h>
 
+#include <imgm/imgs.h>
 #include <web/widgets/widget.h>
 
 struct Widget *main_cnt = NULL;
 static struct Keyboard kb;
+static struct Mouse mouse;
 
 void update(struct tgr_app *app){
 
@@ -17,11 +19,18 @@ void update(struct tgr_app *app){
         struct Key tmp;
         get_pressed_key(&kb, &tmp);
 
-        if (key_cmp(tmp, keyc("в"))){
+        if (key_cmp(tmp, keye("esc"))){
             app->FORCE_STOP = 1;
         }
     }
 
+    byte mhas_input = process_mouse(
+        &mouse, app->input, app->input_len
+    );
+
+    tgr_pixel(app, (struct rgb){
+        255, 0, 255
+    }, mouse.x, mouse.y, 0);
     draw_widget(app, main_cnt);
 
     // =================== FPS =======================
@@ -40,8 +49,9 @@ int main(){
     app.background_clr = (struct rgb){28, 28, 28};
     app.FORCE_FPS = 60;
 
+    mouse = (struct Mouse){0};
     create_kboard(&kb);
-
+    
     u64 uid;
     struct Widget *box = NULL; create_widget(&box, 
         BOX_WIDGET, 
@@ -76,9 +86,11 @@ int main(){
     
     free_widget(box); // Already copied
     free(box);
-
+    
+    enable_mouse();
     tgr_run(&app, update);
     tgr_end(&app);
+    disable_mouse();
 
     free_container(main_cnt->wgdata);
     free_widget(main_cnt);

@@ -10,6 +10,15 @@
         "limits": "cpp",
         "valarray": "cpp",
         "algorithm": "cpp",
-        "int.h": "c"
+        "int.h": "c",
+        "bit": "c",
+        "complex": "c",
+        "functional": "c",
+        "string_view": "c",
+        "format": "c",
+        "istream": "c",
+        "numeric": "c",
+        "semaphore": "c",
+        "bigint": "c"
     }
 }

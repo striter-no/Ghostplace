@@ -41,12 +41,12 @@ void tgr_run(
         for (u64 y = 0; y < app->TERM_HEIGHT; y++){
             for (u64 x = 0; x < app->TERM_WIDTH; x++){
                 tgr_tpix_set(app, (struct pixel){
-                    .color.r = 255,
-                    .color.g = 255,
-                    .color.b = 255,
-                    .bgcolor.r = -1,
-                    .bgcolor.g = -1,
-                    .bgcolor.b = -1,
+                    .color.r = app->background_clr.r,
+                    .color.g = app->background_clr.g,
+                    .color.b = app->background_clr.b,
+                    .bgcolor.r = app->background_clr.r,
+                    .bgcolor.g = app->background_clr.g,
+                    .bgcolor.b = app->background_clr.b,
                     .unich = ' ',
                     .fore_reset = 0,
                     .back_reset = 0,
@@ -66,7 +66,17 @@ void tgr_run(
         if (!app->__frame_changed)
             goto __tgr_upd_end;
 
-        term_write("\033[H", 3); // Clear console
+        // char prebuff[90], lbuff[50];
+        // strcat(prebuff, "\033[H");
+        // sprintf(
+        //     lbuff, 
+        //     "\033[48;2;%d;%d;%dm", 
+        //     0,0,0
+        // );
+        // strcat(prebuff, lbuff);
+
+        // term_write(prebuff, strlen(prebuff)); // Clear console
+        term_write("\033[H", 3);
         size_t allbuff_s = 0;
         char *allbytes = NULL;
         for (u64 y = 0; y < app->TERM_HEIGHT; y++){
@@ -180,6 +190,7 @@ void tgr_init(
     app->input = NULL;
     app->input_len = 0;
     app->fps = 0;
+    app->background_clr = (struct rgb){50, 50, 50};
     app->FORCE_FPS = -1;
 
     app->ticks = 0;
@@ -206,12 +217,12 @@ void tgr_init(
     for (u64 y = 0; y < app->TERM_HEIGHT; y++){
         for (u64 x = 0; x < app->TERM_WIDTH; x++){
             app->pix_displ[y * app->TERM_WIDTH + x] = (struct pixel){
-                .color.r = 255,
-                .color.g = 255,
-                .color.b = 255,
-                .bgcolor.r = -1,
-                .bgcolor.g = -1,
-                .bgcolor.b = -1,
+                .color.r = app->background_clr.r,
+                .color.g = app->background_clr.g,
+                .color.b = app->background_clr.b,
+                .bgcolor.r = app->background_clr.r,
+                .bgcolor.g = app->background_clr.g,
+                .bgcolor.b = app->background_clr.b,
                 .unich = ' ',
                 .fore_reset = 0,
                 .back_reset = 0,

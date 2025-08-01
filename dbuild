@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-gcc-14 -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -I src -lm \
+reset
+gcc-14 -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc  \
 && printf "\n\n" \
 && valgrind --leak-check=yes --track-origins=yes ./"$1"
 

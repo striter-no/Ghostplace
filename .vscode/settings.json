@@ -9,6 +9,7 @@
         "random": "cpp",
         "limits": "cpp",
         "valarray": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "int.h": "c"
     }
 }

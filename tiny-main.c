@@ -1,24 +1,15 @@
 #include <console/tgr.h>
 #include <imgm/imgs.h>
-struct stb_img ghost, ghostlabel;
+
+#include <web/widgets/widget.h>
+
+struct Widget *main_cnt = NULL;
 
 void update(struct tgr_app *app){
-    img_insert(
-        app, 
-        &ghost, 
-        floor(app->TERM_WIDTH / 2.f - ghost.width), 
-        app->TERM_HEIGHT * 0.1f,
-        (struct rgb){170, 170, 170}
-    );
 
-    img_insert(
-        app, 
-        &ghostlabel, 
-        floor(app->TERM_WIDTH / 2.f - ghostlabel.width), 
-        app->TERM_HEIGHT * 0.1f + ghost.height + 1,
-        (struct rgb){170, 170, 170}
-    );
+    draw_widget(app, main_cnt);
 
+    // =================== FPS =======================
     char fpsbuff[20];
     sprintf(fpsbuff, "%d", app->fps);
 
@@ -29,17 +20,51 @@ void update(struct tgr_app *app){
 }
 
 int main(){
-    
-    img_load("./assets/ghost.png", &ghost, 4);
-    img_load("./assets/ghostplace.png", &ghostlabel, 4);
-
     struct tgr_app app;
     tgr_init(&app);
     app.FORCE_FPS = 60;
 
+    u64 uid;
+    struct Widget *box = NULL; create_widget(&box, 
+        BOX_WIDGET, 
+        (struct BoundingRect){0, 0, app.TERM_WIDTH, app.TERM_HEIGHT}
+    );
+    
+    struct Box *box_ptr = box->wgdata;
+    box_ptr->color = (struct rgb){70, 130, 200};
+    box_ptr->type = BOX_ROUNDED;
+
+
+    struct Widget *img = NULL; create_widget(&img, 
+        IMAGE_WIDGET, 
+        (struct BoundingRect){5, 5, 20, 20}
+    );
+
+    struct Image *img_ptr = img->wgdata;
+    img_load("./assets/ghost.png", &img_ptr->img, 4);
+    img_ptr->base_clr = (struct rgb){200, 200, 200};
+    img_ptr->is_dense = 1;
+    ubyte *data = img_ptr->img.data;   
+
+
+    create_widget(&main_cnt, CONTAINER_WIDGET, (struct BoundingRect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT});
+    create_cont(main_cnt->wgdata);
+
+    add_widget(main_cnt, *box, &uid);
+    add_widget(main_cnt, *img, &uid);
+    
+    free_widget(img); // Already copied
+    free(img);
+    
+    free_widget(box); // Already copied
+    free(box);
+
     tgr_run(&app, update);
     tgr_end(&app);
 
-    img_free(&ghost);
-    img_free(&ghostlabel);
+    free_container(main_cnt->wgdata);
+    free_widget(main_cnt);
+    free(main_cnt);
+
+    stbi_image_free(data);
 }

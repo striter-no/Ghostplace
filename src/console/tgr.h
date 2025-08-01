@@ -26,8 +26,8 @@ struct pixel {
     struct rgb bgcolor;
     u32 unich;
     
-    u32 prefix[15];
-    u32 postfix[15];
+    char prefix[15];
+    char postfix[15];
 
     int fore_reset;
     int back_reset;
@@ -42,7 +42,9 @@ struct str_clr_specs {
 
 struct tgr_app {
     struct terminal __raw_term;
+    struct rgb background_clr;
     i32 fps;
+
     i32 FORCE_FPS;
 
     byte __frame_changed;

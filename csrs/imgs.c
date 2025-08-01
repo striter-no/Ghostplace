@@ -1,5 +1,5 @@
 #define STB_IMAGE_IMPLEMENTATION
-#include "../src/imgm/imgs.h"
+#include <imgm/imgs.h>
 
 void img_load(const char *path, struct stb_img *img, int preffred_channels){
     img->data = stbi_load(
@@ -30,6 +30,21 @@ void get_pxa(const struct stb_img *img, u64 x, u64 y, struct rgb *out, int *alph
     *alpha = img->data[index + 3];
 }
 
+void set_px(struct stb_img *img, u64 x, u64 y, struct rgb clr){
+    int index = (y * img->width + x) * 3;
+    img->data[index + 0] = clr.r;
+    img->data[index + 1] = clr.g;
+    img->data[index + 2] = clr.b;
+}
+
+void set_pxa(struct stb_img *img, u64 x, u64 y, struct rgb clr, int alpha){
+    int index = (y * img->width + x) * 4;
+    img->data[index + 0] = clr.r;
+    img->data[index + 1] = clr.g;
+    img->data[index + 2] = clr.b;
+    img->data[index + 3] = alpha;
+}
+
 void img_insert(
     struct tgr_app *app, 
     struct stb_img *img, 
@@ -51,4 +66,40 @@ void img_insert(
             }
         }
     }
+}
+
+void img_crop(struct stb_img *img, u64 fx, u64 fy, u64 tx, u64 ty){
+    struct stb_img out;
+    img_blank(&out, tx - fx, ty - fy, img->channels);
+
+    byte isa = img->channels == 4;
+    for (u64 y = fy; y < ty; y++){
+        for (u64 x = fx; x < tx; x++){
+            struct rgb orig; int alpha;
+            if (isa) {
+                get_pxa(img, x, y, &orig, &alpha);
+                set_pxa(&out, x - fx, y - fy, orig, alpha);
+            } else {
+                get_px(img, x, y, &orig);
+                set_px(&out, x - fx, y - fy, orig);
+            }
+        }
+    }
+
+    img_cpy(img, &out);
+}
+
+void img_cpy(struct stb_img *to, struct stb_img *src){
+    to->channels = src->channels;
+    to->width = src->width;
+    to->height = src->height;
+    to->data = malloc(src->width * src->height * src->channels);
+    memcpy(to->data, src->data, src->width * src->height * src->channels);
+}
+
+void img_blank(struct stb_img *img, u64 w, u64 h, int channels){
+    img->channels = channels;
+    img->width = w;
+    img->height = h;
+    img->data = malloc(w * h * channels);
 }

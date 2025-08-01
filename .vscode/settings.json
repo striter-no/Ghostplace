@@ -19,6 +19,8 @@
         "istream": "c",
         "numeric": "c",
         "semaphore": "c",
-        "bigint": "c"
+        "bigint": "c",
+        "base.h": "c",
+        "utf8.h": "c"
     }
 }

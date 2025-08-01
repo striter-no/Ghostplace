@@ -28,10 +28,30 @@ void update(struct tgr_app *app){
         &mouse, app->input, app->input_len
     );
 
-    tgr_pixel(app, (struct rgb){
-        255, 0, 255
-    }, mouse.x, mouse.y, 0);
+    // tgr_pixel(app, (struct rgb){
+    //     255, 0, 255
+    // }, mouse.x, mouse.y, 0);
     draw_widget(app, main_cnt);
+
+    struct Image img;
+    img.base_clr = (struct rgb){255, 255, 255};
+    img.is_dense = 0;
+
+    struct stb_img *simg = &img.img;
+    img_load("./assets/ghostplace.png", simg, 4);
+    
+    draw_image(app, &img, (struct BoundingRect){app->TERM_WIDTH / 2 - simg->width, app->TERM_HEIGHT * 0.4, 100, 20});
+    img_free(simg);
+
+    struct Image g_img;
+    g_img.base_clr = (struct rgb){200, 255, 220};
+    g_img.is_dense = 0;
+
+    struct stb_img *g_simg = &g_img.img;
+    img_load("./assets/ghost.png", g_simg, 4);
+    
+    draw_image(app, &g_img, (struct BoundingRect){app->TERM_WIDTH * 0.7, app->TERM_HEIGHT * 0.55, 100, 20});
+    img_free(g_simg);
 
     // =================== FPS =======================
     char fpsbuff[20];
@@ -55,7 +75,7 @@ int main(){
     u64 uid;
     struct Widget *box = NULL; create_widget(&box, 
         BOX_WIDGET, 
-        (struct BoundingRect){0, 0, app.TERM_WIDTH, app.TERM_HEIGHT}
+        (struct BoundingRect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT}
     );
     
     struct Box *box_ptr = box->wgdata;
@@ -65,22 +85,39 @@ int main(){
 
     struct Widget *img = NULL; create_widget(&img, 
         IMAGE_WIDGET, 
-        (struct BoundingRect){5, 5, 20, 20}
+        (struct BoundingRect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT}
     );
 
     struct Image *img_ptr = img->wgdata;
-    img_load("./assets/ghost.png", &img_ptr->img, 4);
-    img_ptr->base_clr = (struct rgb){200, 200, 200};
-    img_ptr->is_dense = 1;
-    ubyte *data = img_ptr->img.data;   
+    struct stb_img *simg = &img_ptr->img;
 
+    img_load("./assets/forest.png", simg, 0);
+    img_crop(simg, simg->width * 0.2, 0, simg->width * 0.8, simg->height);
+    img_ptr->base_clr = (struct rgb){100, 100, 100};
+    img_ptr->is_dense = 0;
+    ubyte *data = simg->data;
+
+
+    struct Widget *text = NULL; create_widget(&text, 
+        TEXT_WIDGET, 
+        (struct BoundingRect){app.TERM_WIDTH * 0.1, app.TERM_HEIGHT * 0.6, app.TERM_WIDTH / 2 - 5, 20}
+    );
+    struct Text *text_ptr = text->wgdata;
+    text_ptr->base_clr = (struct rgb){255, 255, 255};
+    text_ptr->style = styles[STYLE_CURSIVE];
+    utf8_conv("Привет всем это демонстрация!\nAnd here goes ASCII\nIn software, a stack buffer overflow or stack buffer overrun occurs when a program writes to a memory address on the program's call stack outside of the intended data structure, which is usually a fixed-length buffer.[1][2] Stack buffer overflow bugs are caused when a program writes more data to a buffer located on the stack than what is actually allocated for that buffer. This almost always results in corruption of adjacent data on the stack, and in cases where the overflow was triggered by mistake, will often cause the program to crash or operate incorrectly. Stack buffer overflow is a type of the more general programming malfunction known as buffer overflow (or buffer overrun).[1] Overfilling a buffer on the stack is more likely to derail program execution than overfilling a buffer on the heap because the stack contains the return addresses for all active function calls.", &text_ptr->unicode_txt);
+    int32_t *txt_data = text_ptr->unicode_txt;
 
     create_widget(&main_cnt, CONTAINER_WIDGET, (struct BoundingRect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT});
     create_cont(main_cnt->wgdata);
 
     add_widget(main_cnt, *box, &uid);
     add_widget(main_cnt, *img, &uid);
-    
+    add_widget(main_cnt, *text, &uid);
+
+    free_widget(text);
+    free(text);
+
     free_widget(img); // Already copied
     free(img);
     
@@ -98,4 +135,5 @@ int main(){
 
     free_keyboard(&kb);
     stbi_image_free(data);
+    free(txt_data);
 }

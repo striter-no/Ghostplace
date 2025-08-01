@@ -7,7 +7,8 @@ const struct txt_style styles[] = {
     {"\033[4m", "\033[24m"}, // underline
     {"\033[5m", "\033[25m"}, // blink
     {"\033[7m", "\033[27m"}, // inverse
-    {"\033[9m", "\033[29m"}  // strike
+    {"\033[9m", "\033[29m"}, // strike
+    {"", ""}                 // empty
 };
 
 void draw_image(
@@ -22,18 +23,21 @@ void draw_image(
 
     const struct stb_img *img = &img_wdg->img;
     
+    byte isa = img->channels == 4;
     u64 hy = min(img->height, rect.h);
     for (u64 y = 0; y < hy; y++){
-        for (u64 x = 0; x < img->width * 2; x+=2){
+        for (u64 x = 0; x < min(rect.w, img->width * 2); x+=2){
             struct rgb clr;
-            int alpha;
+            int alpha = -1;
 
-            get_pxa(img, x / 2, y, &clr, &alpha);
+            if (isa) get_pxa(img, x / 2, y, &clr, &alpha);
+            else get_px(img, x / 2, y, &clr);
             clr.r *= img_wdg->base_clr.r / 255.f;
             clr.g *= img_wdg->base_clr.g / 255.f;
             clr.b *= img_wdg->base_clr.b / 255.f;
             if (alpha != 0){
                 tgr_pixel(app, clr, rect.x + x, rect.y + y, 0);
+                if (rect.x + x + 1 > rect.x + rect.w) continue;
                 tgr_pixel(app, clr, rect.x + x + 1, rect.y + y, 1);
             }
         }
@@ -53,21 +57,19 @@ void draw_image_dense(
     rheight += !is_ok;
     u64 hy = min(rheight / 2, (u64)ceil(rect.h / 2.f));
     
-    // Wrong
-    // if (hy < rheight) return;
-
     i32 *i;
     utf8_conv((ubyte*)"▄", &i);
-    // fprintf(stderr, "%d/%d", hy, rheight);
-    // abort();
+    byte isa = img->channels == 4;
     for (u64 y = 0; y < hy * 2; y += 2){
-        for (u64 x = 0; x < img->width; x++){
+        for (u64 x = 0; x < min(img->width, rect.w); x++){
             struct pixel *px = tgr_tpx_get(app, rect.x + x, rect.y + y / 2);
             
             struct rgb clr_bg, clr_fr;
-            int alpha_up, alpha_down;
+            int alpha_up = -1, alpha_down = -1;
 
-            get_pxa(img, x, y, &clr_bg, &alpha_up);
+            if (isa) get_pxa(img, x, y, &clr_bg, &alpha_up);
+            else get_px(img, x, y, &clr_bg);
+
             if (alpha_up == 0) clr_bg.r = -1;
             else {
                 clr_bg.r *= img_wdg->base_clr.r / 255.f;
@@ -75,7 +77,9 @@ void draw_image_dense(
                 clr_bg.b *= img_wdg->base_clr.b / 255.f;    
             }
 
-            get_pxa(img, x, y + 1, &clr_fr, &alpha_down);
+            if (isa) get_pxa(img, x, y + 1, &clr_fr, &alpha_down);
+            else get_px(img, x, y + 1, &clr_fr);
+
             if (alpha_down == 0) clr_fr.r = -1;
             else {
                 clr_fr.r *= img_wdg->base_clr.r / 255.f;
@@ -102,11 +106,11 @@ void draw_text(
 ) {
     u64 max_chars = rect.w;
     u64 text_len = utf32_strlen(text->unicode_txt);
-    u64 num_chars = min(text_len, max_chars);
+    // u64 num_chars = min(text_len, max_chars);
     
     u64 x = rect.x, y = rect.y;
     u64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
-    for (u64 i = 0; i < num_chars; i++) {
+    for (u64 i = 0; i < text_len; i++) {
         uint32_t codepoint = (uint32_t)text->unicode_txt[i];
         
         if (codepoint == '\n'){
@@ -118,8 +122,9 @@ void draw_text(
 
         if (x >= bx){
             if (y >= by) break;
-            x = 0;
+            x = rect.x;
             y++;
+            // continue;
         }
 
         struct pixel *pix = tgr_tpx_get(app, x++, y);
@@ -132,7 +137,7 @@ void draw_text(
             if (i == 0)
                 strcpy(pix->prefix, text->style.effect);
 
-            if (i == num_chars - 1){
+            if (i == text_len - 1){
                 pix->fore_reset = 1;
                 strcpy(pix->postfix, text->style.reset);
             }

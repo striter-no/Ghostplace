@@ -19,7 +19,10 @@ int main(){
     mouse = (struct Mouse){0};
     create_kboard(&kb);
     create_widget(&main_cnt, CONTAINER_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT});
-    create_cont(main_cnt->wgdata);
+    create_cont(
+        main_cnt->wgdata, 
+        CWG_HORIZONTALLY
+    );
 
     u64 uid;
     // ===================

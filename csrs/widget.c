@@ -3,9 +3,11 @@
 // ================================ CONTAINER ===================================
 
 void create_cont(
-    struct Container *cont
+    struct Container *cont,
+    enum WG_CONTAINER_POS storing
 ){
     cont->widgets = create_table(sizeof(u64), sizeof(struct ExtCWidget));
+    cont->storing_wgc = storing;
 }
 
 void free_container(
@@ -111,7 +113,10 @@ void draw_container(
         switch (wg.positioning.vr){
             case NORMAL_V: {
                 rwg->y = rect.y + offset_y;
-                offset_y += rwg->h;
+                if (cont->storing_wgc == CWG_VERTICLLY)
+                    offset_y += rwg->h;
+                else
+                    offset_x += rwg->w;
                 break;
             }
             case ABSOLUTE:

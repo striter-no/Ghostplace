@@ -8,6 +8,11 @@ enum WG_POSITIONING {
     ABSOLUTE
 };
 
+enum WG_CONTAINER_POS {
+    CWG_HORIZONTALLY, 
+    CWG_VERTICLLY
+};
+
 struct WidgetRelp {
     enum WG_POSITIONING hr, vr; // horizontally, vertically
 };
@@ -53,11 +58,13 @@ struct ExtCWidget {
 };
 
 struct Container {
+    enum WG_CONTAINER_POS storing_wgc;
     struct Table widgets;
 };
 
 void create_cont(
-    struct Container *cont
+    struct Container *cont,
+    enum WG_CONTAINER_POS storing
 );
 
 void free_container(

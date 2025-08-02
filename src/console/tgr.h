@@ -7,15 +7,17 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <math.h>
 #include <utf8.h>
+#include <queue.h>
 
 #define ALL_RST  "\033[0m"
 #define FORE_RST "\033[39m"
 #define BACK_RST "\033[49m"
 
-extern int __TGR_MTB_CTRL_C_PRESSED;
+extern int __TGR_MTB_CTRL_C_PRESSED; // ATOMIC ONLY
 
 struct rgb {
     i16 r, g, b;
@@ -55,13 +57,8 @@ struct tgr_app {
     u64 TERM_HEIGHT;
     u64 ticks;
     f64 deltaTime;
-
-    utf8proc_uint8_t *utf_input;
     
-    byte *input;
-    u64   input_len;
-
-    byte FORCE_STOP;
+    struct queue inp_queue;
     struct pixel *pix_displ;
 };
 
@@ -70,6 +67,11 @@ struct tgr_app {
 byte pix_cmp(
     struct pixel *p1, 
     struct pixel *p2
+);
+
+byte px_in_bounds(
+    struct tgr_app *app,
+    u64 x, u64 y
 );
 
 struct pixel *tgr_tpx_get(
@@ -117,6 +119,8 @@ void spec_string_insert(
 // ================== TGR SYSTEM ==================
 
 void __tgr_ctrl_c_handler(int signum);
+
+void tgr_fstop();
 
 void tgr_run(
     struct tgr_app *app, 

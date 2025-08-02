@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 reset
-gcc-14 -fsanitize=address -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc  \
+gcc-14 -fsanitize=address -fno-omit-frame-pointer -pedantic -Wall -Wextra -g -O2 -o  "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc  \
 && printf "\n\n" \
 && ./"$1"
 

@@ -10,9 +10,12 @@ static struct Keyboard kb;
 static struct Mouse mouse;
 
 void update(struct tgr_app *app){
+    struct qbuffer buff = {0};
+    byte has_bytes = 0 == pop_buffer(&app->inp_queue, &buff);
+    if (!has_bytes) goto after_hid;
 
     byte has_input = kb_process_input(
-        &kb, app->input, app->input_len
+        &kb, buff.bytes, buff.size
     );
 
     if (has_input){
@@ -20,18 +23,23 @@ void update(struct tgr_app *app){
         get_pressed_key(&kb, &tmp);
 
         if (key_cmp(tmp, keye("esc"))){
-            app->FORCE_STOP = 1;
+            tgr_fstop();
         }
     }
 
     byte mhas_input = process_mouse(
-        &mouse, app->input, app->input_len
+        &mouse, buff.bytes, buff.size
     );
 
-    // tgr_pixel(app, (struct rgb){
-    //     255, 0, 255
-    // }, mouse.x, mouse.y, 0);
+    clear_qbuffer(&buff);
+
+    // ================================ AFTER HID =================================
+    after_hid:
+
     draw_widget(app, main_cnt);
+    tgr_pixel(app, (struct rgb){
+        255, 0, 255
+    }, mouse.x, mouse.y, 0);
 
     struct Image img;
     img.base_clr = (struct rgb){255, 255, 255};

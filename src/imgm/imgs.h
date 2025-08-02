@@ -15,6 +15,7 @@ void img_crop(struct stb_img *img, u64 fx, u64 fy, u64 tx, u64 ty);
 void img_load(const char *path, struct stb_img *img, int preffred_channels);
 void img_free(struct stb_img *img);
 void img_cpy(struct stb_img *to, struct stb_img *src);
+void img_rmove(struct stb_img *to, struct stb_img *src);
 void img_blank(struct stb_img *img, u64 w, u64 h, int channels);
 
 void set_px(struct stb_img *img, u64 x, u64 y, struct rgb clr);

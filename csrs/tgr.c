@@ -1,10 +1,9 @@
 #include <console/tgr.h>
-#include <time.h>
 
 int __TGR_MTB_CTRL_C_PRESSED = 0;
 
 void __tgr_ctrl_c_handler(int signum){
-    __TGR_MTB_CTRL_C_PRESSED = 1;
+    __sync_fetch_and_add(&__TGR_MTB_CTRL_C_PRESSED, 1);
 }
 
 long get_time_ns() {
@@ -19,6 +18,33 @@ long long current_time_ms() {
     return tv.tv_sec * 1000 + tv.tv_usec / 1000;  // миллисекунды
 }
 
+void * __thread_tgr_inp_handler(void *args){
+    struct tgr_app *app = args;
+    byte *input = NULL; 
+    u64 size = 0;
+    
+    while (!__TGR_MTB_CTRL_C_PRESSED){
+        term_read(&input, &size);
+
+        if (size > 0) {
+            struct qbuffer buff;
+            buff.bytes = malloc(size);
+            if (buff.bytes) {
+                memcpy(buff.bytes, input, size);
+                buff.size = size;
+                push_buffer(&app->inp_queue, &buff);
+                free(buff.bytes);
+            }
+        }
+    }
+    free(input);
+    pthread_exit(NULL);
+}
+
+void tgr_fstop(){
+    __sync_fetch_and_add(&__TGR_MTB_CTRL_C_PRESSED, 1);
+}
+
 void tgr_run(
     struct tgr_app *app, 
     void (*update)(struct tgr_app *app)
@@ -28,7 +54,10 @@ void tgr_run(
     term_write("\033[?1049h", 8); // Change console screen
     term_write("\033[?25l", 6); // Hide cursor
 
-    while (!__TGR_MTB_CTRL_C_PRESSED && !app->FORCE_STOP){
+    pthread_t hid_thread;
+    pthread_create(&hid_thread, NULL, __thread_tgr_inp_handler, (void *)app);
+
+    while (!__TGR_MTB_CTRL_C_PRESSED){
         if (app->__millis_passed >= 1000){
             app->fps = app->__frames;
             app->__frames = 0;
@@ -55,27 +84,12 @@ void tgr_run(
                 }, x, y);
             }
         }
-
-        term_read(
-            &app->input, 
-            &app->input_len
-        );
         
         update(app);
 
         if (!app->__frame_changed)
             goto __tgr_upd_end;
 
-        // char prebuff[90], lbuff[50];
-        // strcat(prebuff, "\033[H");
-        // sprintf(
-        //     lbuff, 
-        //     "\033[48;2;%d;%d;%dm", 
-        //     0,0,0
-        // );
-        // strcat(prebuff, lbuff);
-
-        // term_write(prebuff, strlen(prebuff)); // Clear console
         term_write("\033[H", 3);
         size_t allbuff_s = 0;
         char *allbytes = NULL;
@@ -178,6 +192,7 @@ void tgr_run(
             app->ticks++;
         }
     }
+    pthread_join(hid_thread, NULL);
 
     term_write("\033[?25h", 6);
     term_write("\033[?1049l", 8); // Restore console screen
@@ -187,8 +202,7 @@ void tgr_init(
     struct tgr_app *app
 ){
     term_new(&app->__raw_term);
-    app->input = NULL;
-    app->input_len = 0;
+    app->inp_queue = create_queue();
     app->fps = 0;
     app->background_clr = (struct rgb){50, 50, 50};
     app->FORCE_FPS = -1;
@@ -197,7 +211,6 @@ void tgr_init(
     app->__frames = 0;
     app->__millis_passed = 0;
 
-    app->FORCE_STOP = 0;
     app->pix_displ = NULL;
 
     term_dem(
@@ -239,7 +252,7 @@ void tgr_end(
     struct tgr_app *app
 ){
     __TGR_MTB_CTRL_C_PRESSED = 0;
-    free(app->input);
+    clear_queue(&app->inp_queue);
     free(app->pix_displ);
     term_reset(&app->__raw_term);
 }
@@ -255,6 +268,7 @@ void string_insert(
     u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
         struct pixel *pix = tgr_tpx_get(app, x + i, y);
+        if (!pix) continue;
         if (!app->__frame_changed || pix->unich != string[i])
             app->__frame_changed = 1;
         else
@@ -275,6 +289,7 @@ void rgb_string_insert(
     u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
         struct pixel *pix = tgr_tpx_get(app, x + i, y);
+        if (!pix) continue;
         if (!app->__frame_changed || pix->unich != string[i])
             app->__frame_changed = 1;
         else
@@ -300,6 +315,8 @@ void spec_string_insert(
     u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
         struct pixel *pix = tgr_tpx_get(app, x + i, y);
+        if (!pix) continue;
+        
         if (!app->__frame_changed || pix->unich != string[i])
             app->__frame_changed = 1;
         else
@@ -328,11 +345,20 @@ byte pix_cmp(struct pixel *p1, struct pixel *p2){
            p1->unich == p2->unich;
 }
 
+byte px_in_bounds(
+    struct tgr_app *app,
+    u64 x, u64 y
+){
+    return x >= 0 && x <= app->TERM_WIDTH && y >= 0 && y < app->TERM_HEIGHT; 
+}
+
 void tgr_tpix_set(
     struct tgr_app *app,
     struct pixel pixel,
     u64 x, u64 y
 ){
+    if (!px_in_bounds(app, x, y)) return;
+
     if (!app->__frame_changed || !pix_cmp(&app->pix_displ[
         y * app->TERM_WIDTH + x
     ], &pixel)){
@@ -352,6 +378,8 @@ void tgr_pixel(
 
     u64 x, u64 y, byte bgrst
 ){
+    if (!px_in_bounds(app, x, y)) return;
+
     struct rgb bgc = app->pix_displ[
         y * app->TERM_WIDTH + x
     ].bgcolor;
@@ -373,5 +401,6 @@ struct pixel *tgr_tpx_get(
     struct tgr_app *app,
     u64 x, u64 y
 ){
+    if (!px_in_bounds(app, x, y)) return NULL;
     return &app->pix_displ[app->TERM_WIDTH * y + x];
 }

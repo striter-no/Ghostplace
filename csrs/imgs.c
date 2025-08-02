@@ -86,7 +86,8 @@ void img_crop(struct stb_img *img, u64 fx, u64 fy, u64 tx, u64 ty){
         }
     }
 
-    img_cpy(img, &out);
+    img_rmove(img, &out);
+    img_free(&out);
 }
 
 void img_cpy(struct stb_img *to, struct stb_img *src){
@@ -95,6 +96,11 @@ void img_cpy(struct stb_img *to, struct stb_img *src){
     to->height = src->height;
     to->data = malloc(src->width * src->height * src->channels);
     memcpy(to->data, src->data, src->width * src->height * src->channels);
+}
+
+void img_rmove(struct stb_img *to, struct stb_img *src){
+    img_free(to);
+    img_cpy(to, src);
 }
 
 void img_blank(struct stb_img *img, u64 w, u64 h, int channels){

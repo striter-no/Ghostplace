@@ -63,7 +63,8 @@ void draw_image_dense(
     for (u64 y = 0; y < hy * 2; y += 2){
         for (u64 x = 0; x < min(img->width, rect.w); x++){
             struct pixel *px = tgr_tpx_get(app, rect.x + x, rect.y + y / 2);
-            
+            if (!px) continue;
+
             struct rgb clr_bg, clr_fr;
             int alpha_up = -1, alpha_down = -1;
 
@@ -128,7 +129,8 @@ void draw_text(
         }
 
         struct pixel *pix = tgr_tpx_get(app, x++, y);
-        
+        if (!pix) continue;
+
         if (!app->__frame_changed || pix->unich != codepoint) {
             app->__frame_changed = 1;
             pix->unich = codepoint;
@@ -175,45 +177,61 @@ void draw_box(
 
     struct pixel *pix;
     pix = tgr_tpx_get(app, x, y);
-    pix->color = box->color;
-    pix->unich = unichars[0];
+    if (pix){
+        pix->color = box->color;
+        pix->unich = unichars[0];
+    }
 
     for (u64 i = x + 1; i < bx - 1; i++){
         struct pixel *pix = tgr_tpx_get(app, i, y);
-        pix->color = box->color;
-        pix->unich = unichars[4];
+        if (pix){
+            pix->color = box->color;
+            pix->unich = unichars[4];
+        }
     } 
 
     pix = tgr_tpx_get(app, bx - 1, y);
-    pix->color = box->color;
-    pix->unich = unichars[1];
+    if (pix){
+        pix->color = box->color;
+        pix->unich = unichars[1];
+    }
 
     y++;
     for (; y < by - 1; y++){
         pix = tgr_tpx_get(app, x, y);
-        pix->color = box->color;
-        pix->unich = unichars[5];
-        pix->fore_reset = 1;
+        if (pix){
+            pix->color = box->color;
+            pix->unich = unichars[5];
+            pix->fore_reset = 1;
+        }
 
         pix = tgr_tpx_get(app, bx - 1, y);
-        pix->color = box->color;
-        pix->unich = unichars[5];
-        pix->fore_reset = 1;
+        if (pix){
+            pix->color = box->color;
+            pix->unich = unichars[5];
+            pix->fore_reset = 1;
+        }
     }
 
     pix = tgr_tpx_get(app, x, y);
-    pix->color = box->color;
-    pix->unich = unichars[2];
+    if (pix){
+        pix->color = box->color;
+        pix->unich = unichars[2];
+    }
 
     for (u64 i = x + 1; i < bx - 1; i++){
         struct pixel *pix = tgr_tpx_get(app, i, y);
-        pix->color = box->color;
-        pix->unich = unichars[4];
+        if (pix){
+            pix->color = box->color;
+            pix->unich = unichars[4];
+        }
     }
 
     pix = tgr_tpx_get(app, bx - 1, y);
-    pix->color = box->color;
-    pix->unich = unichars[3];
+    if (pix){
+        pix->color = box->color;
+        pix->unich = unichars[3];
+    }
 
     free(unichars);
 }

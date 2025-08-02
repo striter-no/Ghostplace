@@ -4,6 +4,7 @@
 #include <table.h>
 #include <stdio.h>
 #include <debug.h>
+#include <pthread.h>
 
 struct ESC_SEQ {
     char esc[18];

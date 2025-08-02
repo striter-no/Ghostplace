@@ -11,6 +11,12 @@ enum MOUSE_BUTTONS {
     MOUSE_NO_BTN
 };
 
+enum MOUSE_TRACKING_MODE {
+    MOUSE_NORMAL_TRACKING,
+    MOUSE_BUTTONS_TRACKING,
+    MOUSE_ANY_TRACKING
+};
+
 struct Mouse {
     enum MOUSE_BUTTONS btn;
     byte scroll_h;

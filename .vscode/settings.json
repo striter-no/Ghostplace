@@ -21,6 +21,7 @@
         "semaphore": "c",
         "bigint": "c",
         "base.h": "c",
-        "utf8.h": "c"
+        "utf8.h": "c",
+        "mouse.h": "c"
     }
 }

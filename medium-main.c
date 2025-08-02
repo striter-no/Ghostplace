@@ -99,7 +99,7 @@ int main(){
     struct Image *img_ptr = img->wgdata;
     struct stb_img *simg = &img_ptr->img;
 
-    img_load("./assets/forest.png", simg, 0);
+    img_load("./assets/earth.png", simg, 0);
     img_crop(simg, simg->width * 0.2, 0, simg->width * 0.8, simg->height);
     img_ptr->base_clr = (struct rgb){100, 100, 100};
     img_ptr->is_dense = 0;
@@ -132,10 +132,10 @@ int main(){
     free_widget(box); // Already copied
     free(box);
     
-    enable_mouse();
+    enable_mouse(MOUSE_NORMAL_TRACKING);
     tgr_run(&app, update);
     tgr_end(&app);
-    disable_mouse();
+    disable_mouse(MOUSE_NORMAL_TRACKING);
 
     free_container(main_cnt->wgdata);
     free_widget(main_cnt);

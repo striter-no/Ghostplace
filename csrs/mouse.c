@@ -40,7 +40,7 @@ byte process_mouse(struct Mouse *mouse, byte *bytes, u64 size) {
     char *rest = cpbuff + 3; // Пропускаем \033[<
     parts[0] = strtok_r(rest, ";", &rest);
     parts[1] = strtok_r(NULL, ";", &rest);
-    parts[2] = strtok_r(NULL, "", &rest);
+    parts[2] = strtok_r(NULL, "",  &rest);
 
     // Проверка частей
     if (!parts[0] || !parts[1] || !parts[2]) {

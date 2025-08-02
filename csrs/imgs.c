@@ -16,6 +16,11 @@ void img_free(struct stb_img *img){
 }
 
 void get_px(struct stb_img *img, u64 x, u64 y, struct rgb *out){
+    if (!in_img(img, x, y)) {
+        out->r = -1;
+        return;
+    }
+
     int index = (y * img->width + x) * 3;
     out->r = img->data[index + 0];
     out->g = img->data[index + 1];
@@ -23,6 +28,13 @@ void get_px(struct stb_img *img, u64 x, u64 y, struct rgb *out){
 }
 
 void get_pxa(const struct stb_img *img, u64 x, u64 y, struct rgb *out, int *alpha){
+    // printf("getpxa: %i %i/%i %i\n", x, y, img->width, img->height);
+    
+    if (!in_img(img, x, y)) {
+        out->r = -1;
+        return;
+    }
+
     int index = (y * img->width + x) * 4;
     out->r = img->data[index + 0];
     out->g = img->data[index + 1];
@@ -31,6 +43,10 @@ void get_pxa(const struct stb_img *img, u64 x, u64 y, struct rgb *out, int *alph
 }
 
 void set_px(struct stb_img *img, u64 x, u64 y, struct rgb clr){
+    if (!in_img(img, x, y)) {
+        return;
+    }
+
     int index = (y * img->width + x) * 3;
     img->data[index + 0] = clr.r;
     img->data[index + 1] = clr.g;
@@ -38,6 +54,10 @@ void set_px(struct stb_img *img, u64 x, u64 y, struct rgb clr){
 }
 
 void set_pxa(struct stb_img *img, u64 x, u64 y, struct rgb clr, int alpha){
+    if (!in_img(img, x, y)) {
+        return;
+    }
+
     int index = (y * img->width + x) * 4;
     img->data[index + 0] = clr.r;
     img->data[index + 1] = clr.g;
@@ -94,6 +114,7 @@ void img_cpy(struct stb_img *to, struct stb_img *src){
     to->channels = src->channels;
     to->width = src->width;
     to->height = src->height;
+    // if (to->data == NULL)
     to->data = malloc(src->width * src->height * src->channels);
     memcpy(to->data, src->data, src->width * src->height * src->channels);
 }
@@ -108,4 +129,8 @@ void img_blank(struct stb_img *img, u64 w, u64 h, int channels){
     img->width = w;
     img->height = h;
     img->data = malloc(w * h * channels);
+}
+
+byte in_img(struct stb_img *img, u64 x, u64 y){
+    return x >= 0 && x < img->width && y >= 0 && y < img->height;
 }

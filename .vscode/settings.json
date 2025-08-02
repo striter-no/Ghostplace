@@ -22,6 +22,7 @@
         "bigint": "c",
         "base.h": "c",
         "utf8.h": "c",
-        "mouse.h": "c"
+        "mouse.h": "c",
+        "table.h": "c"
     }
 }

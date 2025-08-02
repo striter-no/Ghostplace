@@ -23,6 +23,8 @@ void set_pxa(struct stb_img *img, u64 x, u64 y, struct rgb clr, int alpha);
 void get_px(struct stb_img *img, u64 x, u64 y, struct rgb *out);
 void get_pxa(const struct stb_img *img, u64 x, u64 y, struct rgb *out, int *alpha);
 
+byte in_img(struct stb_img *img, u64 x, u64 y);
+
 void img_insert(
     struct tgr_app *app, 
     struct stb_img *img, 

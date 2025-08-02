@@ -152,6 +152,16 @@ int cstr_conv(const int32_t *wide_cs, uint8_t **utf8_cs) {
     return 0;
 }
 
+size_t utf32_count(const int32_t *s, int32_t c){
+    size_t i = 0, o = 0;
+    if (!s) return 0;
+
+    while (s[i] && s[i] != '\0'){
+        o += s[i++] == c;
+    }
+    return o;
+}
+
 // Аналог strlen для UTF-32
 size_t utf32_strlen(const int32_t *s) {
     const int32_t *p = s;

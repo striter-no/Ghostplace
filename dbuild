@@ -3,6 +3,6 @@
 reset
 gcc-14 -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc  \
 && printf "\n\n" \
-&& valgrind --leak-check=yes --track-origins=yes ./"$1"
+&& valgrind --exit-on-first-error=yes --leak-check=yes --track-origins=yes ./"$1"
 
 mv ./"$1" ./bin

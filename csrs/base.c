@@ -14,7 +14,7 @@ const struct txt_style styles[] = {
 void draw_image(
     struct tgr_app *app, 
     const struct Image *img_wdg, 
-    struct BoundingRect rect
+    struct Rect rect
 ){
     if (img_wdg->is_dense){
         draw_image_dense(app, img_wdg, rect);
@@ -47,7 +47,7 @@ void draw_image(
 void draw_image_dense(
     struct tgr_app *app, 
     const struct Image *img_wdg, 
-    struct BoundingRect rect
+    struct Rect rect
 ){
     const struct stb_img *img = &img_wdg->img;
     
@@ -103,7 +103,7 @@ void draw_image_dense(
 void draw_text(
     struct tgr_app *app, 
     const struct Text *text, 
-    struct BoundingRect rect
+    struct Rect rect
 ) {
     u64 max_chars = rect.w;
     u64 text_len = utf32_strlen(text->unicode_txt);
@@ -150,7 +150,7 @@ void draw_text(
 void draw_box(
     struct tgr_app *app, 
     const struct Box *box, 
-    struct BoundingRect rect
+    struct Rect rect
 ){
     u64 x = rect.x, y = rect.y;
     u64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
@@ -234,6 +234,34 @@ void draw_box(
     }
 
     free(unichars);
+}
+
+void text_cpy(
+    struct Text *dst,
+    struct Text *src
+){
+    dst->base_clr = src->base_clr;
+    dst->style = src->style;
+    // if (dst->unicode_txt == NULL)
+    dst->unicode_txt = (i32*)malloc(sizeof(i32) * (utf32_strlen(src->unicode_txt) + 1));
+    memcpy(dst->unicode_txt, src->unicode_txt, sizeof(i32) * (utf32_strlen(src->unicode_txt) + 1));
+}
+
+void imgwg_cpy(
+    struct Image *dst,
+    struct Image *src
+){
+    dst->base_clr = src->base_clr;
+    dst->is_dense = src->is_dense;
+    img_cpy(&dst->img, &src->img);
+}
+
+void box_cpy(
+    struct Box *dst,
+    struct Box *src
+){
+    dst->color = src->color;
+    dst->type = src->type;
 }
 
 void free_text_wg(

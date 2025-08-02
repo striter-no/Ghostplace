@@ -25,6 +25,8 @@ int utf8_nconv(const uint8_t *utf8_cs, int32_t **wide_cs, u64 byte_len);
  */
 int cstr_conv(const int32_t *wide_cs, uint8_t **utf8_cs);
 
+size_t utf32_count(const int32_t *s, int32_t c);
+
 // Аналог strlen для UTF-32
 size_t utf32_strlen(const int32_t *s);
 

@@ -60,9 +60,9 @@ struct Box {
     struct rgb color;
 };
 
-struct BoundingRect {
-    u64 x, y;
-    u64 w, h;
+struct Rect {
+    i64 x, y;
+    i64 w, h;
 };
 
 
@@ -70,25 +70,40 @@ struct BoundingRect {
 void draw_image(
     struct tgr_app *app, 
     const struct Image *img_wdg, 
-    struct BoundingRect rect
+    struct Rect rect
 );
 
 void draw_image_dense(
     struct tgr_app *app, 
     const struct Image *img_wdg, 
-    struct BoundingRect rect
+    struct Rect rect
 );
 
 void draw_text(
     struct tgr_app *app, 
     const struct Text *text, 
-    struct BoundingRect rect
+    struct Rect rect
 );
 
 void draw_box(
     struct tgr_app *app, 
     const struct Box *box, 
-    struct BoundingRect rect
+    struct Rect rect
+);
+
+void imgwg_cpy(
+    struct Image *dst,
+    struct Image *src
+);
+
+void text_cpy(
+    struct Text *dst,
+    struct Text *src
+);
+
+void box_cpy(
+    struct Box *dst,
+    struct Box *src
 );
 
 void free_text_wg(

@@ -5,21 +5,19 @@
 void create_cont(
     struct Container *cont
 ){
-    cont->widgets = create_table(sizeof(u64), sizeof(struct Widget));
+    cont->widgets = create_table(sizeof(u64), sizeof(struct ExtCWidget));
 }
 
 void free_container(
     struct Container *cont
 ){
+    if (!cont) return;
     struct Table *tb = &cont->widgets;
 
     for (u64 i = 0; i < tb->size; i++){
-        struct Widget wg;
+        struct ExtCWidget wg;
         table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
-        // printf("freeing %d/%d\n", i + 1, tb->size);
-        if (wg.wgdata){
-            free_widget(&wg);
-        }
+        free_widget(&wg.widget);
     }
 
     clear_table(tb);
@@ -32,21 +30,26 @@ void upd_contianer(
     struct Table *tb = &cont->widgets;
 
     for (u64 i = 0; i < tb->size; i++){
-        struct Widget wg;
+        struct ExtCWidget wg;
         table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
         
-        u64 h_dt = cont_wg->orig_state.x - wg.orig_state.x;
-        u64 v_dt = cont_wg->orig_state.y - wg.orig_state.y;
+        u64 h_dt = cont_wg->orig_state.x - wg.widget.orig_state.x;
+        u64 v_dt = cont_wg->orig_state.y - wg.widget.orig_state.y;
         
-        wg.rect.x = cont_wg->rect.x + h_dt;
-        wg.rect.y = cont_wg->rect.y + v_dt;
+        wg.widget.rect.x = cont_wg->rect.x + h_dt;
+        wg.widget.rect.y = cont_wg->rect.y + v_dt;
+
+        if (wg.widget.wgtype == CONTAINER_WIDGET){
+            upd_contianer(&wg.widget);
+        }
     }
 }
 
 void add_widget(
     struct Widget *cont_wg,
     struct Widget to_add,
-    u64           *uid
+    u64           *uid,
+    struct WidgetRelp relp
 ){
     if (cont_wg->wgtype != CONTAINER_WIDGET) 
         return;
@@ -54,11 +57,15 @@ void add_widget(
     struct Container *cont = cont_wg->wgdata;
     struct Table *tb = &cont->widgets;
 
-    struct Widget copy;
+    struct ExtCWidget ewg = {0};
+    struct Widget copy = {0};
     widget_copy(&copy, &to_add);
 
+    ewg.positioning = relp;
+    ewg.widget = copy;
+
     *uid = rand() % x_u64;
-    table_add(tb, uid, &copy);
+    table_add(tb, uid, &ewg);
 }
 
 void rem_widget(
@@ -77,14 +84,50 @@ void rem_widget(
 void draw_container(
     struct tgr_app *app, 
     const struct Container *cont, 
-    struct BoundingRect rect
+    struct Rect rect
 ){
     struct Table *tb = &cont->widgets;
 
+    u64 offset_x = 0, offset_y = 0;
     for (u64 i = 0; i < tb->size; i++){
-        struct Widget wg;
+        struct ExtCWidget wg;
         table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
-        draw_widget(app, &wg);
+        
+
+        struct Rect *rwg = &wg.widget.rect;
+
+        // X positioning
+        switch (wg.positioning.hr){
+            case NORMAL_H: {
+                rwg->x = rect.x + offset_x;
+                break;
+            }
+            case ABSOLUTE:
+                rwg->x = rect.x;
+                break;
+        }
+
+        // Y positioning
+        switch (wg.positioning.vr){
+            case NORMAL_V: {
+                rwg->y = rect.y + offset_y;
+                offset_y += rwg->h;
+                break;
+            }
+            case ABSOLUTE:
+                rwg->y = rect.y;
+                break;
+        }
+
+        // Offseting
+        switch (wg.widget.wgtype) {
+            case BOX_WIDGET: {
+                offset_x++; offset_y++;
+                break;
+            }
+        }
+        
+        draw_widget(app, &wg.widget);
     }
 }
 
@@ -94,7 +137,7 @@ void draw_container(
 void create_widget(
     struct Widget **out,
     enum WIDGET_TYPE type,
-    struct BoundingRect rect
+    struct Rect rect
 ){
     u64 bytes = 0;
     switch (type) {
@@ -118,14 +161,84 @@ void create_widget(
     (*out)->rect       = rect;
 }
 
+void adjust_rect(
+    struct Widget *widget
+){
+    struct Rect rect = widget->rect;
+    if (rect.w == -1 || rect.h == -1){
+        switch (widget->wgtype){
+            case IMAGE_WIDGET: {
+                rect.w = (rect.w == -1) ? ((struct Image*)(widget->wgdata))->img.width : rect.w;
+                rect.h = (rect.h == -1) ? ((struct Image*)(widget->wgdata))->img.height : rect.h;
+                break;
+            }
+            case TEXT_WIDGET: {
+                struct Text *txt = widget->wgdata;
+
+                if (rect.w == -1){
+                    u64 mx_sz = 0, crr_sz = 0;
+                    for (u64 i = 0; i < utf32_strlen(txt->unicode_txt); i++){
+                        if (txt->unicode_txt[i] == '\n'){
+                            mx_sz = max(mx_sz, crr_sz);
+                            crr_sz = 0;
+                            continue;
+                        }
+                        crr_sz++;
+                    }
+                    rect.w = mx_sz;
+                }
+
+                if (rect.h == -1){
+                    u64 x = 0, y = 0;
+                    u64 bx = rect.w; // borders
+                    for (u64 i = 0; i < utf32_strlen(txt->unicode_txt); i++) {
+                        uint32_t codepoint = (uint32_t)txt->unicode_txt[i];
+                        
+                        if (codepoint == '\n'){
+                            x = 0;
+                            y++;
+                            continue;
+                        }
+
+                        if (x >= bx){
+                            x = 0;
+                            y++;
+                        }
+                        x++;
+                    }
+                    rect.h = y + 1;
+                }
+                break;
+            }
+            default: {
+                rect.w = 1;
+                rect.h = 1;
+            }
+        }
+    }
+    widget->rect = rect;
+}
+
 void free_widget(
     struct Widget *widget
 ){
     if (!widget->wgdata) return;
+
+    switch (widget->wgtype){
+        case IMAGE_WIDGET: {
+            img_free(widget->wgdata);
+            break;
+        }
+        case TEXT_WIDGET: {
+            free_text_wg(widget->wgdata);
+            break;
+        }
+    }
+
     free(widget->wgdata);
     widget->wgdata = NULL;
     widget->typesize = 0;
-    widget->rect = (struct BoundingRect){0};
+    widget->rect = (struct Rect){0};
     widget->wgtype = WIDGET_UNDEFINED;
 }
 
@@ -165,6 +278,61 @@ void widget_copy(
     dest->typesize = src->typesize;
     dest->wgtype = src->wgtype;
     dest->wgdata = malloc(src->typesize);
+    
+    switch (dest->wgtype){
+        case IMAGE_WIDGET: {
+            imgwg_cpy(dest->wgdata, src->wgdata);
+            break;
+        }
+        case TEXT_WIDGET: {
+            text_cpy(dest->wgdata, src->wgdata);
+            break;
+        }
+        case BOX_WIDGET: {
+            box_cpy(dest->wgdata, src->wgdata);
+            break;
+        }
+        default: {
+            memcpy(dest->wgdata, src->wgdata, src->typesize);
+        }
+    }
+}
 
-    memcpy(dest->wgdata, src->wgdata, src->typesize);
+// ============================== RECT ===========================
+
+struct Rect rect_intersection(
+    struct Rect r1, struct Rect r2
+){
+    u64 ri1 = r1.x + r1.w, 
+        bo1 = r1.y + r1.h,
+        ri2 = r2.x + r2.w,
+        bo2 = r2.y + r2.h;
+    
+    u64 left = max(r1.x, r2.x),
+        top  = max(r1.y, r2.y),
+        right = min(ri1, ri2),
+        bottom = min(bo1, bo2);
+    
+    if (left >= right || top >= bottom)
+        return (struct Rect){0};
+    
+    return (struct Rect){left, top, right - left, bottom - top}; 
+}
+
+struct Rect rect_union(
+    struct Rect r1, struct Rect r2
+){
+    u64 x = min(r1.x, r2.x),
+        y = min(r1.y, r2.y);
+    u64 w = max(r1.x, r2.x) - x,
+        h = max(r1.y, r2.y) - y;
+
+    return (struct Rect){x, y, w, h};
+}
+
+byte in_rect(
+    struct Rect r1, u64 x, u64 y
+){
+    return x > r1.x && x < (r1.x + r1.w) && 
+           y > r1.y && y < (r1.y + r1.h);
 }

@@ -3,8 +3,9 @@
 #include "base.h"
 
 enum WG_POSITIONING {
-    LEFT, MIDDLE_H, RIGHT,
-    UP, MIDDLE_V, DOWN
+    LEFT, MIDDLE_H, RIGHT, NORMAL_H,
+    UP, MIDDLE_V, DOWN, NORMAL_V,
+    ABSOLUTE
 };
 
 struct WidgetRelp {
@@ -16,17 +17,21 @@ struct Widget {
     void *wgdata;
     u64 typesize;
 
-    struct BoundingRect rect;
-    struct BoundingRect orig_state;
+    struct Rect rect;
+    struct Rect orig_state;
 };
 
 void create_widget(
     struct Widget **out,
     enum WIDGET_TYPE type,
-    struct BoundingRect rect
+    struct Rect rect
 );
 
 void free_widget(
+    struct Widget *widget
+);
+
+void adjust_rect(
     struct Widget *widget
 );
 
@@ -41,6 +46,11 @@ void widget_copy(
 );
 
 // ===================== CONTAINER =======================
+
+struct ExtCWidget {
+    struct WidgetRelp positioning;
+    struct Widget widget;
+};
 
 struct Container {
     struct Table widgets;
@@ -61,7 +71,8 @@ void upd_contianer(
 void add_widget(
     struct Widget *cont_wg,
     struct Widget to_add,
-    u64           *uid
+    u64           *uid,
+    struct WidgetRelp relp
 );
 
 void rem_widget(
@@ -72,6 +83,19 @@ void rem_widget(
 void draw_container(
     struct tgr_app *app, 
     const struct Container *cont, 
-    struct BoundingRect rect
+    struct Rect rect
 );
 
+// ============================== RECT ==============================
+
+struct Rect rect_intersection(
+    struct Rect r1, struct Rect r2
+);
+
+struct Rect rect_union(
+    struct Rect r1, struct Rect r2
+);
+
+byte in_rect(
+    struct Rect r1, u64 x, u64 y
+);

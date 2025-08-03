@@ -8,6 +8,8 @@ struct Widget *main_cnt = NULL;
 static struct Keyboard kb;
 static struct Mouse mouse;
 
+u64 imp_uid;
+
 void update(struct tgr_app *app);
 
 int main(){
@@ -18,7 +20,7 @@ int main(){
 
     mouse = (struct Mouse){0};
     create_kboard(&kb);
-    create_widget(&main_cnt, CONTAINER_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT/2});
+    create_widget(&main_cnt, CONTAINER_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT});
     create_cont(main_cnt->wgdata, CWG_VERTICLLY);
 
     u64 uid;
@@ -30,7 +32,7 @@ int main(){
         for (int k = 0; k < 3; k++){
             struct Widget *box = NULL; create_widget(&box, BOX_WIDGET, (struct Rect){0, 0, 10, 5} );
             *(struct Box *)(box->wgdata) = (struct Box){
-                .color = (struct rgb){255, 255, 255},
+                .color = (struct rgb){255, 0, 255},
                 .type = BOX_DOUBLE
             };
 
@@ -48,14 +50,14 @@ int main(){
 
     struct Widget *text = NULL; create_widget(&text, TEXT_WIDGET, (struct Rect){0, 0, 10, -1} );
     *(struct Text *)(text->wgdata) = (struct Text){
-        .base_clr = (struct rgb){200, 255, 255},
+        .base_clr = (struct rgb){0, 255, 0},
         .style = styles[NO_STYLE],
         .unicode_txt = NULL
     };
     utf8_conv("Test test test\ntest2\ntest test абвгд", &(((struct Text *)(text->wgdata))->unicode_txt));
 
     adjust_rect(text);
-    add_widget(main_cnt, *text, &uid, (struct WidgetRelp){MIDDLE_H, NORMAL_V});
+    add_widget(main_cnt, *text, &imp_uid, (struct WidgetRelp){MIDDLE_H, NORMAL_V});
     free_widget(text);
     free(text);
 
@@ -95,6 +97,13 @@ void update(struct tgr_app *app){
     }
 
     // WIDGETS =======================
+    
+    struct ExtCWidget *wg;
+    get_widget(main_cnt, imp_uid, &wg);
+    struct Text *txt = wg->widget.wgdata;
+    txt->base_clr.r = 255;
+    
+    upd_contianer(main_cnt);
     draw_widget(app, main_cnt);
 
     // FPS =======================

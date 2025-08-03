@@ -87,6 +87,18 @@ void add_widget(
     struct WidgetRelp relp
 );
 
+void get_widget(
+    struct Widget *from,
+    u64           uid,
+    struct ExtCWidget **dest
+);
+
+void set_widget(
+    struct Widget *from,
+    u64 uid,
+    struct ExtCWidget *wg
+);
+
 void rem_widget(
     struct Widget *cont_wg,
     u64           uid

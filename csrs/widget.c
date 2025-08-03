@@ -89,6 +89,35 @@ void add_widget(
     table_add(tb, uid, &ewg);
 }
 
+void get_widget(
+    struct Widget *from,
+    u64           uid,
+    struct ExtCWidget **dest
+){
+    if (from->wgtype != CONTAINER_WIDGET) 
+        return ;
+    
+    struct Container *cont = from->wgdata;
+    struct Table *tb = &cont->widgets;
+    
+    table_ptr(tb, &uid, (void**)dest);
+}
+
+void set_widget(
+    struct Widget *from,
+    u64 uid,
+    struct ExtCWidget *wg
+){
+    if (from->wgtype != CONTAINER_WIDGET) 
+        return;
+    
+    struct Container *cont = from->wgdata;
+    struct Table *tb = &cont->widgets;
+    // struct Widget copy = {0};
+    // widget_copy(&copy, &wg);
+    table_add(tb, &uid, wg);
+}
+
 void rem_widget(
     struct Widget *cont_wg,
     u64           uid

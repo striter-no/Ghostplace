@@ -108,6 +108,10 @@ struct Rect rect_union(
     struct Rect r1, struct Rect r2
 );
 
+struct Rect rect_clipping(
+    struct Rect base, struct Rect origin
+);
+
 byte in_rect(
     struct Rect r1, u64 x, u64 y
 );

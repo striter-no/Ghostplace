@@ -55,7 +55,7 @@ void draw_image_dense(
     int is_ok = rheight % 2 == 0;
 
     rheight += !is_ok;
-    u64 hy = min(rheight / 2, (u64)ceil(rect.h / 2.f));
+    u64 hy = min(rheight / 2, rect.h);
     
     i32 *i;
     utf8_conv((ubyte*)"▄", &i);

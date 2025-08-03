@@ -18,11 +18,8 @@ int main(){
 
     mouse = (struct Mouse){0};
     create_kboard(&kb);
-    create_widget(&main_cnt, CONTAINER_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT});
-    create_cont(
-        main_cnt->wgdata, 
-        CWG_VERTICLLY
-    );
+    create_widget(&main_cnt, CONTAINER_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT/2});
+    create_cont(main_cnt->wgdata, CWG_VERTICLLY);
 
     u64 uid;
     // ===================
@@ -44,7 +41,7 @@ int main(){
         }
         adjust_rect(subcont);
         
-        add_widget(main_cnt, *subcont, &uid, (struct WidgetRelp){NORMAL_H, NORMAL_V});
+        add_widget(main_cnt, *subcont, &uid, (struct WidgetRelp){MIDDLE_H, NORMAL_V});
         free_widget(subcont);
         free(subcont);
     }
@@ -58,7 +55,7 @@ int main(){
     utf8_conv("Test test test\ntest2\ntest test абвгд", &(((struct Text *)(text->wgdata))->unicode_txt));
 
     adjust_rect(text);
-    add_widget(main_cnt, *text, &uid, (struct WidgetRelp){NORMAL_H, NORMAL_V});
+    add_widget(main_cnt, *text, &uid, (struct WidgetRelp){MIDDLE_H, NORMAL_V});
     free_widget(text);
     free(text);
 
@@ -71,7 +68,7 @@ int main(){
     img_load("./assets/cat.png", &(((struct Image*)(img->wgdata))->img), 0);
 
     adjust_rect(img);
-    add_widget(main_cnt, *img, &uid, (struct WidgetRelp){NORMAL_H, NORMAL_V});
+    add_widget(main_cnt, *img, &uid, (struct WidgetRelp){RIGHT, NORMAL_V});
     free_widget(img);
     free(img);
 

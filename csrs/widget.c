@@ -102,6 +102,72 @@ void rem_widget(
     table_rem(tb, &uid);
 }
 
+struct Rect snap_rect(
+    struct Rect parrent, 
+    struct Rect widget, 
+    struct WidgetRelp relp, 
+    enum WG_CONTAINER_POS parrelp, 
+    u64 *offset_x, u64 *offset_y
+){
+    // X positioning
+    switch (relp.hr){
+        case LEFT:
+        case NORMAL_H: {
+            widget.x = parrent.x + (*offset_x);
+            break;
+        }
+        case MIDDLE_H: {
+            if (parrelp == CWG_VERTICLLY)
+                widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
+            else
+                widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
+            break;
+        }
+        case RIGHT: {
+            if (parrelp == CWG_VERTICLLY)
+                widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
+            else
+                widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
+            break;
+        }
+        case ABSOLUTE:
+            widget.x += parrent.x;
+            break;
+    }
+
+    // Y positioning
+    switch (relp.vr){
+        case UP:
+        case NORMAL_V: {
+            widget.y = parrent.y + (*offset_y);
+            if (parrelp == CWG_VERTICLLY)
+                (*offset_y) += widget.h;
+            else
+                (*offset_x) += widget.w;
+            break;
+        }
+        case MIDDLE_H: {
+            if (parrelp == CWG_VERTICLLY)
+                widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
+            else
+                widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
+            break;
+        }
+        case RIGHT: {
+            if (parrelp == CWG_VERTICLLY)
+                widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
+            else
+                widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
+            break;
+        }
+        case ABSOLUTE:
+            widget.y += parrent.y;
+            break;
+    }
+
+    return widget;
+}
+
 void draw_container(
     struct tgr_app *app, 
     const struct Container *cont, 
@@ -115,34 +181,15 @@ void draw_container(
         table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
 
         struct Rect *rwg = &wg.widget.rect;
-
-        // X positioning
-        switch (wg.positioning.hr){
-            case NORMAL_H: {
-                rwg->x = rect.x + offset_x;
-                break;
-            }
-            case ABSOLUTE:
-                rwg->x = rect.x;
-                break;
-        }
-
-        // Y positioning
-        switch (wg.positioning.vr){
-            case NORMAL_V: {
-                rwg->y = rect.y + offset_y;
-                if (cont->storing_wgc == CWG_VERTICLLY)
-                    offset_y += rwg->h;
-                else
-                    offset_x += rwg->w;
-                break;
-            }
-            case ABSOLUTE:
-                rwg->y = rect.y;
-                break;
-        }
+        *rwg = snap_rect(rect, *rwg, wg.positioning, cont->storing_wgc, &offset_x, &offset_y);
         
-        draw_widget(app, &wg.widget);
+        struct Rect copy = *rwg;
+        *rwg = rect_clipping(rect, *rwg);
+        
+        if (rwg->w != 0 && rwg->h != 0)
+            draw_widget(app, &wg.widget);
+        
+        *rwg = copy;
     }
 }
 
@@ -183,8 +230,9 @@ void adjust_rect(
     if (rect.w == -1 || rect.h == -1){
         switch (widget->wgtype){
             case IMAGE_WIDGET: {
-                rect.w = (rect.w == -1) ? ((struct Image*)(widget->wgdata))->img.width : rect.w;
-                rect.h = (rect.h == -1) ? ((struct Image*)(widget->wgdata))->img.height : rect.h;
+                struct Image *img = widget->wgdata;
+                rect.w = (rect.w == -1) ? img->img.width: rect.w;
+                rect.h = (rect.h == -1) ? img->img.height / (img->is_dense ? 2: 1): rect.h;
                 break;
             }
             case TEXT_WIDGET: {
@@ -236,31 +284,7 @@ void adjust_rect(
                     table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
 
                     struct Rect rwg = wg.widget.rect;
-                    // X positioning
-                    switch (wg.positioning.hr){
-                        case NORMAL_H: {
-                            rwg.x = rect.x + offset_x;
-                            break;
-                        }
-                        case ABSOLUTE:
-                            rwg.x = rect.x;
-                            break;
-                    }
-
-                    // Y positioning
-                    switch (wg.positioning.vr){
-                        case NORMAL_V: {
-                            rwg.y = rect.y + offset_y;
-                            if (cnt->storing_wgc == CWG_VERTICLLY)
-                                offset_y += rwg.h;
-                            else
-                                offset_x += rwg.w;
-                            break;
-                        }
-                        case ABSOLUTE:
-                            rwg.y = rect.y;
-                            break;
-                    }
+                    rwg = snap_rect(rect, rwg, wg.positioning, cnt->storing_wgc, &offset_x, &offset_y);
 
                     mx_width = max(mx_width, rwg.x + rwg.w);
                     mx_height = max(mx_height, rwg.y + rwg.h);
@@ -371,12 +395,12 @@ void widget_copy(
 struct Rect rect_intersection(
     struct Rect r1, struct Rect r2
 ){
-    u64 ri1 = r1.x + r1.w, 
+    i64 ri1 = r1.x + r1.w, 
         bo1 = r1.y + r1.h,
         ri2 = r2.x + r2.w,
         bo2 = r2.y + r2.h;
     
-    u64 left = max(r1.x, r2.x),
+    i64 left = max(r1.x, r2.x),
         top  = max(r1.y, r2.y),
         right = min(ri1, ri2),
         bottom = min(bo1, bo2);
@@ -390,12 +414,36 @@ struct Rect rect_intersection(
 struct Rect rect_union(
     struct Rect r1, struct Rect r2
 ){
-    u64 x = min(r1.x, r2.x),
+    i64 x = min(r1.x, r2.x),
         y = min(r1.y, r2.y);
-    u64 w = max(r1.x, r2.x) - x,
+    i64 w = max(r1.x, r2.x) - x,
         h = max(r1.y, r2.y) - y;
 
     return (struct Rect){x, y, w, h};
+}
+
+struct Rect rect_clipping(
+    struct Rect base, struct Rect origin
+){
+    i64 base_right = base.x + base.w,
+        base_bottom = base.y + base.h,
+        origin_right = origin.x + origin.w,
+        origin_bottom = origin.y + origin.h;
+
+    i64 left = (origin.x > base.x) ? origin.x : base.x,
+        top = (origin.y > base.y) ? origin.y : base.y,
+        right = (origin_right < base_right) ? origin_right : base_right,
+        bottom = (origin_bottom < base_bottom) ? origin_bottom : base_bottom;
+
+    if (left >= right || top >= bottom)
+        return (struct Rect){0};
+
+    return (struct Rect){
+        .x = left,
+        .y = top,
+        .w = right - left,
+        .h = bottom - top
+    };
 }
 
 byte in_rect(

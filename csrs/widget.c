@@ -25,6 +25,25 @@ void free_container(
     clear_table(tb);
 }
 
+void container_cpy(
+    struct Container *dst,
+    struct Container *src
+){
+    dst->storing_wgc = src->storing_wgc;
+    dst->widgets = create_table(src->widgets.key_size, src->widgets.value_size);
+    
+    struct Table *tbd = &dst->widgets;
+    struct Table *tb =  &src->widgets;
+    for (u64 i = 0; i < tb->size; i++){
+        struct ExtCWidget wg, nwg;
+        table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
+
+        nwg.positioning = wg.positioning;
+        widget_copy(&nwg.widget, &wg.widget);
+        table_add(tbd, (ubyte*)tb->keys + i * tb->key_size, &nwg);
+    }
+}
+
 void upd_contianer(
     struct Widget *cont_wg
 ){
@@ -94,7 +113,6 @@ void draw_container(
     for (u64 i = 0; i < tb->size; i++){
         struct ExtCWidget wg;
         table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
-        
 
         struct Rect *rwg = &wg.widget.rect;
 
@@ -122,14 +140,6 @@ void draw_container(
             case ABSOLUTE:
                 rwg->y = rect.y;
                 break;
-        }
-
-        // Offseting
-        switch (wg.widget.wgtype) {
-            case BOX_WIDGET: {
-                offset_x++; offset_y++;
-                break;
-            }
         }
         
         draw_widget(app, &wg.widget);
@@ -215,6 +225,51 @@ void adjust_rect(
                 }
                 break;
             }
+            case CONTAINER_WIDGET: {
+                u64 mx_width = 0, mx_height = 0;
+                u64 offset_x = 0, offset_y = 0;
+                
+                struct Container *cnt = widget->wgdata;
+                struct Table     *tb  = &cnt->widgets;
+                for (u64 i = 0; i < tb->size; i++){
+                    struct ExtCWidget wg;
+                    table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
+
+                    struct Rect rwg = wg.widget.rect;
+                    // X positioning
+                    switch (wg.positioning.hr){
+                        case NORMAL_H: {
+                            rwg.x = rect.x + offset_x;
+                            break;
+                        }
+                        case ABSOLUTE:
+                            rwg.x = rect.x;
+                            break;
+                    }
+
+                    // Y positioning
+                    switch (wg.positioning.vr){
+                        case NORMAL_V: {
+                            rwg.y = rect.y + offset_y;
+                            if (cnt->storing_wgc == CWG_VERTICLLY)
+                                offset_y += rwg.h;
+                            else
+                                offset_x += rwg.w;
+                            break;
+                        }
+                        case ABSOLUTE:
+                            rwg.y = rect.y;
+                            break;
+                    }
+
+                    mx_width = max(mx_width, rwg.x + rwg.w);
+                    mx_height = max(mx_height, rwg.y + rwg.h);
+                }
+
+                rect.w = mx_width;
+                rect.h = mx_height;
+                break;
+            }
             default: {
                 rect.w = 1;
                 rect.h = 1;
@@ -236,6 +291,10 @@ void free_widget(
         }
         case TEXT_WIDGET: {
             free_text_wg(widget->wgdata);
+            break;
+        }
+        case CONTAINER_WIDGET: {
+            free_container(widget->wgdata);
             break;
         }
     }
@@ -295,6 +354,10 @@ void widget_copy(
         }
         case BOX_WIDGET: {
             box_cpy(dest->wgdata, src->wgdata);
+            break;
+        }
+        case CONTAINER_WIDGET: {
+            container_cpy(dest->wgdata, src->wgdata);
             break;
         }
         default: {

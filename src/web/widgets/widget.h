@@ -67,6 +67,11 @@ void create_cont(
     enum WG_CONTAINER_POS storing
 );
 
+void container_cpy(
+    struct Container *dst,
+    struct Container *src
+);
+
 void free_container(
     struct Container *cont
 );

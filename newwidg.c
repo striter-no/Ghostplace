@@ -21,22 +21,33 @@ int main(){
     create_widget(&main_cnt, CONTAINER_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT});
     create_cont(
         main_cnt->wgdata, 
-        CWG_HORIZONTALLY
+        CWG_VERTICLLY
     );
 
     u64 uid;
     // ===================
 
-    struct Widget *box = NULL; create_widget(&box, BOX_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT} );
-    *(struct Box *)(box->wgdata) = (struct Box){
-        .color = (struct rgb){255, 255, 255},
-        .type = BOX_DOUBLE
-    };
+    for (int i = 0; i < 2; i++){
+        struct Widget *subcont = NULL; create_widget(&subcont, CONTAINER_WIDGET, (struct Rect){0, 0, -1, -1});
+        create_cont(subcont->wgdata, CWG_HORIZONTALLY);
+        for (int k = 0; k < 3; k++){
+            struct Widget *box = NULL; create_widget(&box, BOX_WIDGET, (struct Rect){0, 0, 10, 5} );
+            *(struct Box *)(box->wgdata) = (struct Box){
+                .color = (struct rgb){255, 255, 255},
+                .type = BOX_DOUBLE
+            };
 
-    adjust_rect(box);
-    add_widget(main_cnt, *box, &uid, (struct WidgetRelp){ABSOLUTE, ABSOLUTE});
-    free_widget(box);
-    free(box);
+            adjust_rect(box);
+            add_widget(subcont, *box, &uid, (struct WidgetRelp){NORMAL_H, NORMAL_V});
+            free_widget(box);
+            free(box);
+        }
+        adjust_rect(subcont);
+        
+        add_widget(main_cnt, *subcont, &uid, (struct WidgetRelp){NORMAL_H, NORMAL_V});
+        free_widget(subcont);
+        free(subcont);
+    }
 
     struct Widget *text = NULL; create_widget(&text, TEXT_WIDGET, (struct Rect){0, 0, 10, -1} );
     *(struct Text *)(text->wgdata) = (struct Text){
@@ -72,7 +83,6 @@ int main(){
 
     // END ===================
     if (main_cnt){
-        free_container(main_cnt->wgdata);
         free_widget(main_cnt);
         free(main_cnt);
     }

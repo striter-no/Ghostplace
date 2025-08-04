@@ -72,11 +72,13 @@ struct Container {
     byte is_focused;
 
     i64 int_xofs, int_yofs;
+    byte scrollable;
 };
 
 void create_cont(
     struct Container *cont,
-    enum WG_CONTAINER_POS storing
+    enum WG_CONTAINER_POS storing,
+    byte scroll
 );
 
 void container_cpy(
@@ -139,22 +141,4 @@ void draw_container(
     struct tgr_app *app, 
     const struct Container *cont, 
     struct Rect rect
-);
-
-// ============================== RECT ==============================
-
-struct Rect rect_intersection(
-    struct Rect r1, struct Rect r2
-);
-
-struct Rect rect_union(
-    struct Rect r1, struct Rect r2
-);
-
-struct Rect rect_clipping(
-    struct Rect base, struct Rect origin
-);
-
-byte in_rect(
-    struct Rect r1, i64 x, i64 y
 );

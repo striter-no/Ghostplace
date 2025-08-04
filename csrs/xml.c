@@ -1,5 +1,6 @@
 #include <xml.h>
 
+
 // Утилиты для работы со строками
 static void trim_whitespace(char *str) {
     char *end;
@@ -72,6 +73,25 @@ static u16 parse_attributes(const char *str, struct attribute *attrs, u16 max_at
     return count;
 }
 
+// Освобождение памяти
+void free_tag(struct tag *t) {
+    if (!t) return;
+    
+    // Освобождаем дочерние элементы
+    for (u64 i = 0; i < t->childrens_num; i++) {
+        free_tag(t->children[i]);
+    }
+    
+    // Освобождаем массив дочерних указателей
+    free(t->children);
+    
+    // Освобождаем содержимое
+    free(t->content);
+    
+    // Освобождаем сам тег
+    free(t);
+}
+
 // Основная функция парсинга
 struct tag* parse_xml(const char *input) {
     if (!input || !*input) return NULL;
@@ -126,6 +146,8 @@ struct tag* parse_xml(const char *input) {
             safe_strncpy(new_tag->name, name_buf, MAX_NAME);
             new_tag->uid = next_uid++;
             new_tag->content = NULL;
+            new_tag->children = NULL;
+            new_tag->childrens_num = 0;
             
             // Атрибуты
             if (isspace((unsigned char)*p)) {
@@ -159,23 +181,20 @@ struct tag* parse_xml(const char *input) {
                 struct tag *parent = stack[stack_top];
                 
                 // Увеличиваем массив детей
-                struct tag *new_children = (struct tag *)realloc(
+                struct tag **new_children = (struct tag **)realloc(
                     parent->children, 
-                    (parent->childrens_num + 1) * sizeof(struct tag)
+                    (parent->childrens_num + 1) * sizeof(struct tag *)
                 );
                 
                 if (!new_children) {
+                    free(new_tag->content);
                     free(new_tag);
                     return NULL;
                 }
                 
                 parent->children = new_children;
-                parent->children[parent->childrens_num] = *new_tag;
+                parent->children[parent->childrens_num] = new_tag;
                 parent->childrens_num++;
-                
-                // Освобождаем временный указатель
-                free(new_tag);
-                new_tag = &parent->children[parent->childrens_num - 1];
             } else {
                 root = new_tag;
             }
@@ -185,7 +204,16 @@ struct tag* parse_xml(const char *input) {
                 stack[++stack_top] = new_tag;
             } else {
                 // Слишком глубокая вложенность
-                free(new_tag);
+                if (stack_top >= 0) {
+                    // Удаляем из родителя, если был добавлен
+                    if (stack[stack_top]->childrens_num > 0) {
+                        stack[stack_top]->childrens_num--;
+                        free_tag(stack[stack_top]->children[stack[stack_top]->childrens_num]);
+                        free(stack[stack_top]->children);
+                    }
+                } else {
+                    free_tag(new_tag);
+                }
                 return NULL;
             }
         } 
@@ -215,17 +243,4 @@ struct tag* parse_xml(const char *input) {
     }
     
     return root;
-}
-
-// Освобождение памяти (для полноты)
-void free_tag(struct tag *t) {
-    if (!t) return;
-    
-    for (u64 i = 0; i < t->childrens_num; i++) {
-        free_tag(&t->children[i]);
-    }
-    
-    free(t->children);
-    free(t->content);
-    free(t);
 }

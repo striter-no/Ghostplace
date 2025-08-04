@@ -21,19 +21,20 @@ int main(){
     mouse = (struct Mouse){0};
     create_kboard(&kb);
     create_widget(&main_cnt, CONTAINER_WIDGET, (struct Rect){0, 0, app.TERM_WIDTH - 1, app.TERM_HEIGHT});
-    create_cont(main_cnt->wgdata, CWG_VERTICLLY);
+    create_cont(main_cnt->wgdata, CWG_VERTICLLY, 1);
 
     u64 uid;
     // ===================
 
     for (int i = 0; i < 2; i++){
         struct Widget *subcont = NULL; create_widget(&subcont, CONTAINER_WIDGET, (struct Rect){0, 0, -1, -1});
-        create_cont(subcont->wgdata, CWG_HORIZONTALLY);
+        create_cont(subcont->wgdata, CWG_HORIZONTALLY, 1);
         for (int k = 0; k < 3; k++){
-            struct Widget *box = NULL; create_widget(&box, BOX_WIDGET, (struct Rect){0, 0, 10, 20} );
+            struct Widget *box = NULL; create_widget(&box, BOX_WIDGET, (struct Rect){0, 0, -1, -1} );
             *(struct Box *)(box->wgdata) = (struct Box){
                 .color = (struct rgb){255, 0, 255},
-                .type = BOX_DOUBLE
+                .type = BOX_DOUBLE,
+                .srect = (struct Rect){0, 0, 10, 20}
             };
 
             adjust_rect(box);

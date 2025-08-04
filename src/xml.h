@@ -23,7 +23,7 @@ struct tag {
 
     char *content;
     char name[MAX_NAME];
-    struct tag *children;
+    struct tag **children;  // ИЗМЕНЕНО: теперь массив указателей
     u64 childrens_num;
     u64 uid;
 };

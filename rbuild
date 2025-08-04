@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-gcc-14 -pedantic -Wall -Wextra -O3 -o "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc \
+gcc-14 -pedantic -Wall -Wextra -O2 -o "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc \
 && printf "\n\n" \
 && ./"$1"
 

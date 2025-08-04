@@ -43,6 +43,11 @@ enum BOX_TYPE {
     BOX_PRIMITIVE
 };
 
+struct Rect {
+    i64 x, y;
+    i64 w, h;
+};
+
 struct Image {
     struct stb_img img;
     struct rgb base_clr;
@@ -58,13 +63,8 @@ struct Text {
 struct Box {
     enum BOX_TYPE type;
     struct rgb color;
+    struct Rect srect;
 };
-
-struct Rect {
-    i64 x, y;
-    i64 w, h;
-};
-
 
 
 void draw_image(
@@ -108,4 +108,26 @@ void box_cpy(
 
 void free_text_wg(
     struct Text *text
+);
+
+// ============================== RECT ==============================
+
+struct Rect rect_intersection(
+    struct Rect r1, struct Rect r2
+);
+
+struct Rect rect_union(
+    struct Rect r1, struct Rect r2
+);
+
+struct Rect rect_clipping(
+    struct Rect base, struct Rect origin
+);
+
+byte in_rect(
+    struct Rect r1, i64 x, i64 y
+);
+
+byte in_between(
+    i64 f, i64 t, i64 v
 );

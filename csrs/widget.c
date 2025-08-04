@@ -5,13 +5,15 @@
 
 void create_cont(
     struct Container *cont,
-    enum WG_CONTAINER_POS storing
+    enum WG_CONTAINER_POS storing,
+    byte scroll
 ){
     cont->widgets = create_table(sizeof(u64), sizeof(struct ExtCWidget));
     cont->storing_wgc = storing;
     cont->is_focused = 0;
     cont->int_xofs = 0;
     cont->int_yofs = 0;
+    cont->scrollable = scroll;
 }
 
 void free_container(
@@ -72,6 +74,9 @@ void container_cpy(
 ){
     dst->storing_wgc = src->storing_wgc;
     dst->is_focused = src->is_focused;
+    dst->int_xofs = src->int_xofs;
+    dst->int_yofs = src->int_yofs;
+    dst->scrollable = src->scrollable;
     dst->widgets = create_table(src->widgets.key_size, src->widgets.value_size);
     
     struct Table *tbd = &dst->widgets;
@@ -149,7 +154,7 @@ void upd_container(
     struct Container *cont = cont_wg->wgdata;
     struct Table *tb = &cont->widgets;
     
-    if (cont->is_focused){
+    if (cont->scrollable && cont->is_focused){
         if (mouse->scroll_h == 1){
             if (cont->storing_wgc == CWG_VERTICLLY)
                 cont->int_yofs -= 2;
@@ -259,33 +264,7 @@ struct Rect snap_rect(
         loffset_x = og_rect.x;
         loffset_y = og_rect.y;
     }
-
-    // X positioning
-    // switch (relp.hr){
-    //     case LEFT:
-    //     case NORMAL_H: {
-    //         widget.x = parrent.x + (*offset_x);
-    //         break;
-    //     }
-    //     case MIDDLE_H: {
-    //         if (parrelp == CWG_VERTICLLY)
-    //             widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
-    //         else
-    //             widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
-    //         break;
-    //     }
-    //     case RIGHT: {
-    //         if (parrelp == CWG_VERTICLLY)
-    //             widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
-    //         else
-    //             widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
-    //         break;
-    //     }
-    //     case ABSOLUTE:
-    //         widget.x += parrent.x;
-    //         break;
-    // }
-
+    
     i64 *offx = (parrelp == CWG_VERTICLLY ? offset_x : offset_y);
     i64 *offy = (parrelp == CWG_VERTICLLY ? offset_y : offset_x);
     i64 *wx = (parrelp == CWG_VERTICLLY ? &widget.x : &widget.y);
@@ -297,7 +276,6 @@ struct Rect snap_rect(
     i64 pw = (parrelp == CWG_VERTICLLY ? parrent.w : parrent.h);
     i64 ph = (parrelp == CWG_VERTICLLY ? parrent.h : parrent.w);
 
-    // Горизонтальное позиционирование
     if (relp.margin_left != -1) {
         *wx = px + (*offx) + pw * relp.margin_left;
     } else if (relp.margin_right != -1) {
@@ -305,11 +283,9 @@ struct Rect snap_rect(
     } else if (relp.margin_hcenter != -1) {
         *wx = px + (*offx) + ((pw / 2) - ww / 2) * (1 + relp.margin_hcenter);
     } else {
-        // По умолчанию - левое позиционирование (как в старой версии)
         *wx = px + (*offx);
     }
 
-    // Вертикальное позиционирование
     if (relp.margin_up != -1) {
         *wy = py + (*offy) + ph * relp.margin_up;
     } else if (relp.margin_down != -1) {
@@ -317,46 +293,10 @@ struct Rect snap_rect(
     } else if (relp.margin_vcenter != -1) {
         *wy = py + (*offy) + (ph / 2 - wh / 2) * (1 + relp.margin_vcenter);
     } else {
-        // По умолчанию - верхнее позиционирование (как в старой версии)
         *wy = py + (*offy);
     }
 
-    // Увеличение смещения (как в старой версии)
     (*offy) += wh;
-    // if (parrelp == CWG_VERTICLLY) {
-    // } else {
-    //     (*offx) += ww;
-    // }
-
-    // // Y positioning
-    // switch (relp.vr){
-    //     case UP:
-    //     case NORMAL_V: {
-    //         widget.y = parrent.y + (*offset_y);
-    //         if (parrelp == CWG_VERTICLLY)
-    //             (*offset_y) += widget.h;
-    //         else
-    //             (*offset_x) += widget.w;
-    //         break;
-    //     }
-    //     case MIDDLE_H: {
-    //         if (parrelp == CWG_VERTICLLY)
-    //             widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
-    //         else
-    //             widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
-    //         break;
-    //     }
-    //     case RIGHT: {
-    //         if (parrelp == CWG_VERTICLLY)
-    //             widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
-    //         else
-    //             widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
-    //         break;
-    //     }
-    //     case ABSOLUTE:
-    //         widget.y += parrent.y;
-    //         break;
-    // }
 
     widget.x += loffset_x;
     widget.y += loffset_y;
@@ -381,10 +321,22 @@ void draw_container(
         struct Rect copy = *rwg;
         rwg->x += cont->int_xofs;
         rwg->y += cont->int_yofs;
+        // if (wg.widget.wgtype != BOX_WIDGET)
         *rwg = rect_clipping(rect, *rwg);
         
-        if (rwg->w != 0 && rwg->h != 0)
+        if (rwg->w != 0 && rwg->h != 0){
+            // struct Rect srect_cp;
+            if (wg.widget.wgtype == BOX_WIDGET){
+                struct Rect *lrwg = &((struct Box*)wg.widget.wgdata)->srect;
+                *lrwg = *rwg;
+            }
+
             draw_widget(app, &wg.widget);
+
+            // if (wg.widget.wgtype == BOX_WIDGET){
+            //     ((struct Box*)wg.widget.wgdata)->srect = srect_cp;
+            // }
+        }
         
         *rwg = copy;
     }
@@ -491,12 +443,22 @@ void adjust_rect(
                 rect.h = mx_height;
                 break;
             }
+
+            case BOX_WIDGET: {
+                struct Box *bx = widget->wgdata;
+                rect.w = (rect.w == -1) ? bx->srect.w: rect.w;
+                rect.h = (rect.h == -1) ? bx->srect.h: rect.h;
+                printf("%i %i\n", rect.w, rect.h);
+                break;
+            }
+
             default: {
                 rect.w = 1;
                 rect.h = 1;
             }
         }
     }
+    // widget->orig_state = rect;
     widget->rect = rect;
 }
 
@@ -585,67 +547,4 @@ void widget_copy(
             memcpy(dest->wgdata, src->wgdata, src->typesize);
         }
     }
-}
-
-// ============================== RECT ===========================
-
-struct Rect rect_intersection(
-    struct Rect r1, struct Rect r2
-){
-    i64 ri1 = r1.x + r1.w, 
-        bo1 = r1.y + r1.h,
-        ri2 = r2.x + r2.w,
-        bo2 = r2.y + r2.h;
-    
-    i64 left = max(r1.x, r2.x),
-        top  = max(r1.y, r2.y),
-        right = min(ri1, ri2),
-        bottom = min(bo1, bo2);
-    
-    if (left >= right || top >= bottom)
-        return (struct Rect){0};
-    
-    return (struct Rect){left, top, right - left, bottom - top}; 
-}
-
-struct Rect rect_union(
-    struct Rect r1, struct Rect r2
-){
-    i64 x = min(r1.x, r2.x),
-        y = min(r1.y, r2.y);
-    i64 w = max(r1.x, r2.x) - x,
-        h = max(r1.y, r2.y) - y;
-
-    return (struct Rect){x, y, w, h};
-}
-
-struct Rect rect_clipping(
-    struct Rect base, struct Rect origin
-){
-    i64 base_right = base.x + base.w,
-        base_bottom = base.y + base.h,
-        origin_right = origin.x + origin.w,
-        origin_bottom = origin.y + origin.h;
-
-    i64 left = (origin.x > base.x) ? origin.x : base.x,
-        top = (origin.y > base.y) ? origin.y : base.y,
-        right = (origin_right < base_right) ? origin_right : base_right,
-        bottom = (origin_bottom < base_bottom) ? origin_bottom : base_bottom;
-
-    if (left >= right || top >= bottom)
-        return (struct Rect){0};
-
-    return (struct Rect){
-        .x = left,
-        .y = top,
-        .w = right - left,
-        .h = bottom - top
-    };
-}
-
-byte in_rect(struct Rect r1, i64 x, i64 y) {
-    return x > r1.x && 
-           x < (r1.x + r1.w) && 
-           y > r1.y && 
-           y < (r1.y + r1.h);
 }

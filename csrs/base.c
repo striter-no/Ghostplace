@@ -152,10 +152,10 @@ void draw_box(
     const struct Box *box, 
     struct Rect rect
 ){
-    i64 x = rect.x, y = rect.y;
-    i64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
+    i64 x = box->srect.x, y = box->srect.y;
+    i64 bx = box->srect.x + box->srect.w, by = box->srect.y + box->srect.h; // borders
 
-    if (rect.h < 2 || rect.w < 2) 
+    if (box->srect.h < 2 || box->srect.w < 2) 
         return;
 
     const uint8_t *chars;
@@ -177,21 +177,21 @@ void draw_box(
 
     struct pixel *pix;
     pix = tgr_tpx_get(app, x, y);
-    if (pix){
+    if (pix){// && in_rect(rect, x, y)){
         pix->color = box->color;
         pix->unich = unichars[0];
     }
 
     for (u64 i = x + 1; i < bx - 1; i++){
         struct pixel *pix = tgr_tpx_get(app, i, y);
-        if (pix){
+        if (pix){// && in_rect(rect, i, y)){
             pix->color = box->color;
             pix->unich = unichars[4];
         }
     } 
 
     pix = tgr_tpx_get(app, bx - 1, y);
-    if (pix){
+    if (pix){// && in_rect(rect, bx - 1, y)){
         pix->color = box->color;
         pix->unich = unichars[1];
     }
@@ -199,14 +199,14 @@ void draw_box(
     y++;
     for (; y < by - 1; y++){
         pix = tgr_tpx_get(app, x, y);
-        if (pix){
+        if (pix){// && in_rect(rect, x, y)){
             pix->color = box->color;
             pix->unich = unichars[5];
             pix->fore_reset = 1;
         }
 
         pix = tgr_tpx_get(app, bx - 1, y);
-        if (pix){
+        if (pix){// && in_rect(rect, bx - 1, y)){
             pix->color = box->color;
             pix->unich = unichars[5];
             pix->fore_reset = 1;
@@ -214,21 +214,21 @@ void draw_box(
     }
 
     pix = tgr_tpx_get(app, x, y);
-    if (pix){
+    if (pix){// && in_rect(rect, x, y)){
         pix->color = box->color;
         pix->unich = unichars[2];
     }
 
     for (u64 i = x + 1; i < bx - 1; i++){
         struct pixel *pix = tgr_tpx_get(app, i, y);
-        if (pix){
+        if (pix){// && in_rect(rect, i, y)){
             pix->color = box->color;
             pix->unich = unichars[4];
         }
     }
 
-    pix = tgr_tpx_get(app, bx - 1, y);
-    if (pix){
+    pix = tgr_tpx_get(app, bx - 1, by - 1);
+    if (pix){// && in_rect(rect, bx - 1, by - 1)){
         pix->color = box->color;
         pix->unich = unichars[3];
     }
@@ -262,6 +262,7 @@ void box_cpy(
 ){
     dst->color = src->color;
     dst->type = src->type;
+    dst->srect = src->srect;
 }
 
 void free_text_wg(
@@ -271,3 +272,71 @@ void free_text_wg(
     text->unicode_txt = NULL;
 }
 
+// ============================== RECT ===========================
+
+struct Rect rect_intersection(
+    struct Rect r1, struct Rect r2
+){
+    i64 ri1 = r1.x + r1.w, 
+        bo1 = r1.y + r1.h,
+        ri2 = r2.x + r2.w,
+        bo2 = r2.y + r2.h;
+    
+    i64 left = max(r1.x, r2.x),
+        top  = max(r1.y, r2.y),
+        right = min(ri1, ri2),
+        bottom = min(bo1, bo2);
+    
+    if (left >= right || top >= bottom)
+        return (struct Rect){0};
+    
+    return (struct Rect){left, top, right - left, bottom - top}; 
+}
+
+struct Rect rect_union(
+    struct Rect r1, struct Rect r2
+){
+    i64 x = min(r1.x, r2.x),
+        y = min(r1.y, r2.y);
+    i64 w = max(r1.x, r2.x) - x,
+        h = max(r1.y, r2.y) - y;
+
+    return (struct Rect){x, y, w, h};
+}
+
+struct Rect rect_clipping(
+    struct Rect base, struct Rect origin
+){
+    i64 base_right = base.x + base.w,
+        base_bottom = base.y + base.h,
+        origin_right = origin.x + origin.w,
+        origin_bottom = origin.y + origin.h;
+
+    i64 left = (origin.x > base.x) ? origin.x : base.x,
+        top = (origin.y > base.y) ? origin.y : base.y,
+        right = (origin_right < base_right) ? origin_right : base_right,
+        bottom = (origin_bottom < base_bottom) ? origin_bottom : base_bottom;
+
+    if (left >= right || top >= bottom)
+        return (struct Rect){0};
+
+    return (struct Rect){
+        .x = left,
+        .y = top,
+        .w = right - left,
+        .h = bottom - top
+    };
+}
+
+byte in_rect(struct Rect r1, i64 x, i64 y) {
+    return x >= r1.x && 
+           x < (r1.x + r1.w) && 
+           y >= r1.y && 
+           y < (r1.y + r1.h);
+}
+
+byte in_between(
+    i64 f, i64 t, i64 v
+){
+    return v >= f && v <= t;
+}

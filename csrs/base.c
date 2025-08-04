@@ -26,7 +26,7 @@ void draw_image(
     byte isa = img->channels == 4;
     u64 hy = min(img->height, rect.h);
     for (u64 y = 0; y < hy; y++){
-        for (u64 x = 0; x < min(rect.w, img->width * 2); x+=2){
+        for (i64 x = 0; x < min(rect.w, img->width * 2); x+=2){
             struct rgb clr;
             int alpha = -1;
 
@@ -61,7 +61,7 @@ void draw_image_dense(
     utf8_conv((ubyte*)"▄", &i);
     byte isa = img->channels == 4;
     for (u64 y = 0; y < hy * 2; y += 2){
-        for (u64 x = 0; x < min(img->width, rect.w); x++){
+        for (i64 x = 0; x < min(img->width, rect.w); x++){
             struct pixel *px = tgr_tpx_get(app, rect.x + x, rect.y + y / 2);
             if (!px) continue;
 
@@ -109,8 +109,8 @@ void draw_text(
     u64 text_len = utf32_strlen(text->unicode_txt);
     // u64 num_chars = min(text_len, max_chars);
     
-    u64 x = rect.x, y = rect.y;
-    u64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
+    i64 x = rect.x, y = rect.y;
+    i64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
     for (u64 i = 0; i < text_len; i++) {
         uint32_t codepoint = (uint32_t)text->unicode_txt[i];
         
@@ -152,8 +152,8 @@ void draw_box(
     const struct Box *box, 
     struct Rect rect
 ){
-    u64 x = rect.x, y = rect.y;
-    u64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
+    i64 x = rect.x, y = rect.y;
+    i64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
 
     if (rect.h < 2 || rect.w < 2) 
         return;

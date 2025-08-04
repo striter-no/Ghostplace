@@ -1,5 +1,6 @@
 #pragma once
 #include <table.h>
+#include <console/mouse.h>
 #include "base.h"
 
 enum WG_POSITIONING {
@@ -60,6 +61,9 @@ struct ExtCWidget {
 struct Container {
     enum WG_CONTAINER_POS storing_wgc;
     struct Table widgets;
+    byte is_focused;
+
+    i64 int_xofs, int_yofs;
 };
 
 void create_cont(
@@ -76,8 +80,16 @@ void free_container(
     struct Container *cont
 );
 
-void upd_contianer( 
-    struct Widget *cont_wg
+void upd_container_focus(
+    struct tgr_app *app,
+    struct Widget *cont_wg,
+    struct Mouse  *mouse
+);
+
+void upd_container(
+    struct tgr_app *app,
+    struct Widget *cont_wg,
+    struct Mouse  *mouse
 );
 
 void add_widget(
@@ -104,6 +116,17 @@ void rem_widget(
     u64           uid
 );
 
+
+struct Rect snap_rect(
+    struct Rect parrent, 
+    struct Rect widget,
+    struct Rect og_rect,
+    struct WidgetRelp relp, 
+    enum WIDGET_TYPE type,
+    enum WG_CONTAINER_POS parrelp, 
+    i64 *offset_x, i64 *offset_y
+);
+
 void draw_container(
     struct tgr_app *app, 
     const struct Container *cont, 
@@ -125,5 +148,5 @@ struct Rect rect_clipping(
 );
 
 byte in_rect(
-    struct Rect r1, u64 x, u64 y
+    struct Rect r1, i64 x, i64 y
 );

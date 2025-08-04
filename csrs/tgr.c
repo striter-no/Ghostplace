@@ -263,7 +263,7 @@ void string_insert(
     struct tgr_app *app,
     const int32_t *string,
 
-    u64 x, u64 y
+    i64 x, i64 y
 ){
     u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
@@ -283,7 +283,7 @@ void rgb_string_insert(
     struct tgr_app *app,
     const int32_t *string,
 
-    u64 x, u64 y,
+    i64 x, i64 y,
     struct rgb color
 ){
     u64 sz = utf32_strlen(string);
@@ -306,7 +306,7 @@ void spec_string_insert(
     struct tgr_app *app,
     const int32_t *string,
 
-    u64 x, u64 y,
+    i64 x, i64 y,
     struct str_clr_specs specs
 ){
     byte has_frg = specs.frg_size > 0;
@@ -347,7 +347,7 @@ byte pix_cmp(struct pixel *p1, struct pixel *p2){
 
 byte px_in_bounds(
     struct tgr_app *app,
-    u64 x, u64 y
+    i64 x, i64 y
 ){
     return x >= 0 && x <= app->TERM_WIDTH && y >= 0 && y < app->TERM_HEIGHT; 
 }
@@ -355,7 +355,7 @@ byte px_in_bounds(
 void tgr_tpix_set(
     struct tgr_app *app,
     struct pixel pixel,
-    u64 x, u64 y
+    i64 x, i64 y
 ){
     if (!px_in_bounds(app, x, y)) return;
 
@@ -376,7 +376,7 @@ void tgr_pixel(
     struct tgr_app *app,
     struct rgb color,
 
-    u64 x, u64 y, byte bgrst
+    i64 x, i64 y, byte bgrst
 ){
     if (!px_in_bounds(app, x, y)) return;
 
@@ -399,7 +399,7 @@ void tgr_pixel(
 
 struct pixel *tgr_tpx_get(
     struct tgr_app *app,
-    u64 x, u64 y
+    i64 x, i64 y
 ){
     if (!px_in_bounds(app, x, y)) return NULL;
     return &app->pix_displ[app->TERM_WIDTH * y + x];

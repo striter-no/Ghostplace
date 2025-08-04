@@ -30,7 +30,7 @@ int main(){
         struct Widget *subcont = NULL; create_widget(&subcont, CONTAINER_WIDGET, (struct Rect){0, 0, -1, -1});
         create_cont(subcont->wgdata, CWG_HORIZONTALLY);
         for (int k = 0; k < 3; k++){
-            struct Widget *box = NULL; create_widget(&box, BOX_WIDGET, (struct Rect){0, 0, 10, 5} );
+            struct Widget *box = NULL; create_widget(&box, BOX_WIDGET, (struct Rect){0, 0, 10, 20} );
             *(struct Box *)(box->wgdata) = (struct Box){
                 .color = (struct rgb){255, 0, 255},
                 .type = BOX_DOUBLE
@@ -91,8 +91,11 @@ int main(){
 
 
 void update(struct tgr_app *app){
+    mouse.scroll_h = 0;
+
     struct qbuffer buffer;
     if (0 == pop_buffer(&app->inp_queue, &buffer)){
+        process_mouse(&mouse, buffer.bytes, buffer.size);
         clear_qbuffer(&buffer);
     }
 
@@ -103,7 +106,9 @@ void update(struct tgr_app *app){
     struct Text *txt = wg->widget.wgdata;
     txt->base_clr.r = 255;
     
-    upd_contianer(main_cnt);
+    upd_container_focus(app, main_cnt, &mouse);
+    upd_container(app, main_cnt, &mouse);
+    // main_cnt->rect = main_cnt->orig_state;
     draw_widget(app, main_cnt);
 
     // FPS =======================

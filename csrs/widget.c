@@ -1,5 +1,6 @@
 #include <web/widgets/widget.h>
 
+
 // ================================ CONTAINER ===================================
 
 void create_cont(
@@ -8,6 +9,9 @@ void create_cont(
 ){
     cont->widgets = create_table(sizeof(u64), sizeof(struct ExtCWidget));
     cont->storing_wgc = storing;
+    cont->is_focused = 0;
+    cont->int_xofs = 0;
+    cont->int_yofs = 0;
 }
 
 void free_container(
@@ -30,6 +34,7 @@ void container_cpy(
     struct Container *src
 ){
     dst->storing_wgc = src->storing_wgc;
+    dst->is_focused = src->is_focused;
     dst->widgets = create_table(src->widgets.key_size, src->widgets.value_size);
     
     struct Table *tbd = &dst->widgets;
@@ -44,24 +49,95 @@ void container_cpy(
     }
 }
 
-void upd_contianer(
-    struct Widget *cont_wg
+void upd_container_focus(struct tgr_app *app, struct Widget *cont_wg, struct Mouse *mouse) {
+    struct Container *cont = cont_wg->wgdata;
+    int mouse_inside = in_rect(cont_wg->rect, mouse->x, mouse->y);
+    
+    struct Box __debug_box = {
+        .color = (struct rgb){255, 0, 0},
+        .type = BOX_ONE_LINE
+    };
+
+    struct Rect r = cont_wg->rect;
+    draw_box(app, &__debug_box, r);
+
+    tgr_pixel(app, (struct rgb){mouse_inside ? 0: 255, 0, mouse_inside ? 255: 0}, mouse->x, mouse->y, 0);
+
+    // Если клик вне контейнера и нажата левая кнопка - сбрасываем фокус
+    if (!mouse_inside && mouse->btn != MOUSE_NO_BTN) {
+        cont->is_focused = 0;
+        return;
+    }
+    
+    // Если клик внутри контейнера и нажата левая кнопка
+    if (mouse_inside && mouse->btn != MOUSE_NO_BTN) {
+        // cont->is_focused = true;
+
+        // Проверяем, есть ли дочерний элемент под мышью
+        int has_child_under_mouse = 0;
+        struct Table *tb = &cont->widgets;
+        
+        i64 offset_x = 0, offset_y = 0;
+        for (u64 i = 0; i < tb->size; i++) {
+            struct ExtCWidget *wg;
+            table_ptr(tb, (ubyte*)tb->keys + i * tb->key_size, (void**)&wg);
+            
+            if (wg->widget.wgtype == CONTAINER_WIDGET) {
+                // Проверяем, попадает ли мышь в дочерний контейнер
+                
+                struct Rect cpy = wg->widget.rect;
+                struct Rect *rwg = &wg->widget.rect;
+                *rwg = snap_rect(cont_wg->rect, *rwg, wg->widget.orig_state, wg->positioning, wg->widget.wgtype, cont->storing_wgc, &offset_x, &offset_y);
+                rwg->x += cont->int_xofs;
+                rwg->y += cont->int_yofs;
+
+                // if (in_rect(wg->widget.rect, mouse->x, mouse->y)) {
+                    upd_container_focus(app, &wg->widget, mouse);
+                    has_child_under_mouse = has_child_under_mouse || ((struct Container*)wg->widget.wgdata)->is_focused;
+                // }
+                wg->widget.rect = cpy;
+            }
+        }
+        
+        // Устанавливаем фокус ТОЛЬКО если НЕТ дочернего элемента под мышью
+        cont->is_focused = !has_child_under_mouse;
+    }
+}
+
+void upd_container(
+    struct tgr_app *app,
+    struct Widget *cont_wg,
+    struct Mouse  *mouse
 ){
     struct Container *cont = cont_wg->wgdata;
     struct Table *tb = &cont->widgets;
+    
+    if (cont->is_focused){
+        if (mouse->scroll_h == 1){
+            if (cont->storing_wgc == CWG_VERTICLLY)
+                cont->int_yofs -= 2;
+            else
+                cont->int_xofs -= 2;
+        } else if (mouse->scroll_h == -1) {
+            if (cont->storing_wgc == CWG_VERTICLLY)
+                cont->int_yofs += 2;
+            else
+                cont->int_xofs += 2;
+        }
+    }
 
     for (u64 i = 0; i < tb->size; i++){
-        struct ExtCWidget wg;
-        table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
+        struct ExtCWidget *wg;
+        table_ptr(tb, (ubyte*)tb->keys + i * tb->key_size, (void**)&wg);
         
-        u64 h_dt = cont_wg->orig_state.x - wg.widget.orig_state.x;
-        u64 v_dt = cont_wg->orig_state.y - wg.widget.orig_state.y;
+        i64 h_dt = cont_wg->orig_state.x - wg->widget.orig_state.x;
+        i64 v_dt = cont_wg->orig_state.y - wg->widget.orig_state.y;
         
-        wg.widget.rect.x = cont_wg->rect.x + h_dt;
-        wg.widget.rect.y = cont_wg->rect.y + v_dt;
+        wg->widget.rect.x = cont_wg->rect.x + h_dt;
+        wg->widget.rect.y = cont_wg->rect.y + v_dt;
 
-        if (wg.widget.wgtype == CONTAINER_WIDGET){
-            upd_contianer(&wg.widget);
+        if (wg->widget.wgtype == CONTAINER_WIDGET){
+            upd_container(app, &wg->widget, mouse);
         }
     }
 }
@@ -133,11 +209,20 @@ void rem_widget(
 
 struct Rect snap_rect(
     struct Rect parrent, 
-    struct Rect widget, 
+    struct Rect widget,
+    struct Rect og_rect,
     struct WidgetRelp relp, 
+    enum WIDGET_TYPE type,
     enum WG_CONTAINER_POS parrelp, 
-    u64 *offset_x, u64 *offset_y
+    i64 *offset_x, i64 *offset_y
 ){
+
+    i64 loffset_x = 0 , loffset_y = 0;
+    if (type == CONTAINER_WIDGET){
+        loffset_x = og_rect.x;
+        loffset_y = og_rect.y;
+    }
+
     // X positioning
     switch (relp.hr){
         case LEFT:
@@ -194,6 +279,8 @@ struct Rect snap_rect(
             break;
     }
 
+    widget.x += loffset_x;
+    widget.y += loffset_y;
     return widget;
 }
 
@@ -204,15 +291,17 @@ void draw_container(
 ){
     struct Table *tb = &cont->widgets;
 
-    u64 offset_x = 0, offset_y = 0;
+    i64 offset_x = 0, offset_y = 0;
     for (u64 i = 0; i < tb->size; i++){
         struct ExtCWidget wg;
         table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
 
         struct Rect *rwg = &wg.widget.rect;
-        *rwg = snap_rect(rect, *rwg, wg.positioning, cont->storing_wgc, &offset_x, &offset_y);
+        *rwg = snap_rect(rect, *rwg, wg.widget.orig_state, wg.positioning, wg.widget.wgtype, cont->storing_wgc, &offset_x, &offset_y);
         
         struct Rect copy = *rwg;
+        rwg->x += cont->int_xofs;
+        rwg->y += cont->int_yofs;
         *rwg = rect_clipping(rect, *rwg);
         
         if (rwg->w != 0 && rwg->h != 0)
@@ -281,8 +370,8 @@ void adjust_rect(
                 }
 
                 if (rect.h == -1){
-                    u64 x = 0, y = 0;
-                    u64 bx = rect.w; // borders
+                    i64 x = 0, y = 0;
+                    i64 bx = rect.w; // borders
                     for (u64 i = 0; i < utf32_strlen(txt->unicode_txt); i++) {
                         uint32_t codepoint = (uint32_t)txt->unicode_txt[i];
                         
@@ -303,8 +392,8 @@ void adjust_rect(
                 break;
             }
             case CONTAINER_WIDGET: {
-                u64 mx_width = 0, mx_height = 0;
-                u64 offset_x = 0, offset_y = 0;
+                i64 mx_width = 0, mx_height = 0;
+                i64 offset_x = 0, offset_y = 0;
                 
                 struct Container *cnt = widget->wgdata;
                 struct Table     *tb  = &cnt->widgets;
@@ -313,7 +402,7 @@ void adjust_rect(
                     table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
 
                     struct Rect rwg = wg.widget.rect;
-                    rwg = snap_rect(rect, rwg, wg.positioning, cnt->storing_wgc, &offset_x, &offset_y);
+                    rwg = snap_rect(rect, rwg, wg.widget.orig_state, wg.positioning, wg.widget.wgtype, cnt->storing_wgc, &offset_x, &offset_y);
 
                     mx_width = max(mx_width, rwg.x + rwg.w);
                     mx_height = max(mx_height, rwg.y + rwg.h);
@@ -475,9 +564,9 @@ struct Rect rect_clipping(
     };
 }
 
-byte in_rect(
-    struct Rect r1, u64 x, u64 y
-){
-    return x > r1.x && x < (r1.x + r1.w) && 
-           y > r1.y && y < (r1.y + r1.h);
+byte in_rect(struct Rect r1, i64 x, i64 y) {
+    return x >= r1.x && 
+           x < (r1.x + r1.w) && 
+           y >= r1.y && 
+           y < (r1.y + r1.h);
 }

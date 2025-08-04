@@ -71,25 +71,25 @@ byte pix_cmp(
 
 byte px_in_bounds(
     struct tgr_app *app,
-    u64 x, u64 y
+    i64 x, i64 y
 );
 
 struct pixel *tgr_tpx_get(
     struct tgr_app *app,
-    u64 x, u64 y
+    i64 x, i64 y
 );
 
 void tgr_tpix_set(
     struct tgr_app *app,
     struct pixel pixel,
-    u64 x, u64 y
+    i64 x, i64 y
 );
 
 void tgr_pixel(
     struct tgr_app *app,
     struct rgb color,
 
-    u64 x, u64 y, byte bgrst
+    i64 x, i64 y, byte bgrst
 );
 
 // ================== STRINGS ====================
@@ -97,14 +97,14 @@ void string_insert(
     struct tgr_app *app,
     const int32_t *string,
 
-    u64 x, u64 y
+    i64 x, i64 y
 );
 
 void rgb_string_insert(
     struct tgr_app *app,
     const int32_t *string,
 
-    u64 x, u64 y,
+    i64 x, i64 y,
     struct rgb color
 );
 
@@ -112,7 +112,7 @@ void spec_string_insert(
     struct tgr_app *app,
     const int32_t *string,
 
-    u64 x, u64 y,
+    i64 x, i64 y,
     struct str_clr_specs specs
 );
 

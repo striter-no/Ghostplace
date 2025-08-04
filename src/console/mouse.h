@@ -27,6 +27,6 @@ struct Mouse {
     byte ctrled;
 };
 
-void enable_mouse();
-void disable_mouse();
+void enable_mouse(enum MOUSE_TRACKING_MODE mode);
+void disable_mouse(enum MOUSE_TRACKING_MODE mode);
 byte process_mouse(struct Mouse *mouse, byte *bytes, u64 size);

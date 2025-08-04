@@ -3,20 +3,28 @@
 #include <console/mouse.h>
 #include "base.h"
 
-enum WG_POSITIONING {
-    LEFT, MIDDLE_H, RIGHT, NORMAL_H,
-    UP, MIDDLE_V, DOWN, NORMAL_V,
-    ABSOLUTE
-};
-
 enum WG_CONTAINER_POS {
     CWG_HORIZONTALLY, 
     CWG_VERTICLLY
 };
 
-struct WidgetRelp {
-    enum WG_POSITIONING hr, vr; // horizontally, vertically
+enum RELP_ENUM {
+    M_RIGHT,
+    M_LEFT,
+    M_UP,
+    M_DOWN,
+    M_HCENTER,
+    M_VCENTER
 };
+
+struct WidgetRelp {
+    f32 margin_right, margin_left;
+    f32 margin_up,    margin_down;
+    f32 margin_hcenter, margin_vcenter;
+};
+
+struct WidgetRelp gmargin(enum RELP_ENUM x, enum RELP_ENUM y, f32 v1, f32 v2);
+
 // =============== WIDGET ==============
 struct Widget {
     enum WIDGET_TYPE wgtype;

@@ -37,13 +37,13 @@ int main(){
             };
 
             adjust_rect(box);
-            add_widget(subcont, *box, &uid, (struct WidgetRelp){NORMAL_H, NORMAL_V});
+            add_widget(subcont, *box, &uid, gmargin(M_LEFT, M_UP, 0, 0));
             free_widget(box);
             free(box);
         }
         adjust_rect(subcont);
         
-        add_widget(main_cnt, *subcont, &uid, (struct WidgetRelp){MIDDLE_H, NORMAL_V});
+        add_widget(main_cnt, *subcont, &uid, gmargin(M_HCENTER, M_UP, 0, 0));
         free_widget(subcont);
         free(subcont);
     }
@@ -57,7 +57,7 @@ int main(){
     utf8_conv("Test test test\ntest2\ntest test абвгд", &(((struct Text *)(text->wgdata))->unicode_txt));
 
     adjust_rect(text);
-    add_widget(main_cnt, *text, &imp_uid, (struct WidgetRelp){MIDDLE_H, NORMAL_V});
+    add_widget(main_cnt, *text, &imp_uid, gmargin(M_HCENTER, M_UP, 0, 0));
     free_widget(text);
     free(text);
 
@@ -70,7 +70,7 @@ int main(){
     img_load("./assets/cat.png", &(((struct Image*)(img->wgdata))->img), 0);
 
     adjust_rect(img);
-    add_widget(main_cnt, *img, &uid, (struct WidgetRelp){RIGHT, NORMAL_V});
+    add_widget(main_cnt, *img, &uid, gmargin(M_RIGHT, M_UP, 0, 0));
     free_widget(img);
     free(img);
 

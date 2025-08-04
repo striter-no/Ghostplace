@@ -29,6 +29,43 @@ void free_container(
     clear_table(tb);
 }
 
+struct WidgetRelp gmargin(enum RELP_ENUM x, enum RELP_ENUM y, f32 v1, f32 v2){
+    struct WidgetRelp o = {
+        .margin_right = -1,
+        .margin_left = -1,
+        .margin_up = -1,
+        .margin_down = -1,
+        .margin_hcenter = -1,
+        .margin_vcenter = -1
+    };
+
+    switch (x){
+        case M_RIGHT: 
+            o.margin_right = v1;
+            break;
+        case M_LEFT: 
+            o.margin_left = v1;
+            break;
+        case M_HCENTER: 
+            o.margin_hcenter = v1;
+            break;
+    }
+
+    switch (y){
+        case M_UP: 
+            o.margin_up = v2;
+            break;
+        case M_DOWN: 
+            o.margin_down = v2;
+            break;
+        case M_VCENTER: 
+            o.margin_vcenter = v2;
+            break;
+    }
+
+    return o;
+}
+
 void container_cpy(
     struct Container *dst,
     struct Container *src
@@ -224,60 +261,102 @@ struct Rect snap_rect(
     }
 
     // X positioning
-    switch (relp.hr){
-        case LEFT:
-        case NORMAL_H: {
-            widget.x = parrent.x + (*offset_x);
-            break;
-        }
-        case MIDDLE_H: {
-            if (parrelp == CWG_VERTICLLY)
-                widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
-            else
-                widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
-            break;
-        }
-        case RIGHT: {
-            if (parrelp == CWG_VERTICLLY)
-                widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
-            else
-                widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
-            break;
-        }
-        case ABSOLUTE:
-            widget.x += parrent.x;
-            break;
+    // switch (relp.hr){
+    //     case LEFT:
+    //     case NORMAL_H: {
+    //         widget.x = parrent.x + (*offset_x);
+    //         break;
+    //     }
+    //     case MIDDLE_H: {
+    //         if (parrelp == CWG_VERTICLLY)
+    //             widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
+    //         else
+    //             widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
+    //         break;
+    //     }
+    //     case RIGHT: {
+    //         if (parrelp == CWG_VERTICLLY)
+    //             widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
+    //         else
+    //             widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
+    //         break;
+    //     }
+    //     case ABSOLUTE:
+    //         widget.x += parrent.x;
+    //         break;
+    // }
+
+    i64 *offx = (parrelp == CWG_VERTICLLY ? offset_x : offset_y);
+    i64 *offy = (parrelp == CWG_VERTICLLY ? offset_y : offset_x);
+    i64 *wx = (parrelp == CWG_VERTICLLY ? &widget.x : &widget.y);
+    i64 *wy = (parrelp == CWG_VERTICLLY ? &widget.y : &widget.x);
+    i64 ww = (parrelp == CWG_VERTICLLY ? widget.w : widget.h);
+    i64 wh = (parrelp == CWG_VERTICLLY ? widget.h : widget.w);
+    i64 px = (parrelp == CWG_VERTICLLY ? parrent.x : parrent.y);
+    i64 py = (parrelp == CWG_VERTICLLY ? parrent.y : parrent.x);
+    i64 pw = (parrelp == CWG_VERTICLLY ? parrent.w : parrent.h);
+    i64 ph = (parrelp == CWG_VERTICLLY ? parrent.h : parrent.w);
+
+    // Горизонтальное позиционирование
+    if (relp.margin_left != -1) {
+        *wx = px + (*offx) + pw * relp.margin_left;
+    } else if (relp.margin_right != -1) {
+        *wx = px + (*offx) + pw * (1.0f - relp.margin_right) - ww;
+    } else if (relp.margin_hcenter != -1) {
+        *wx = px + (*offx) + ((pw / 2) - ww / 2) * (1 + relp.margin_hcenter);
+    } else {
+        // По умолчанию - левое позиционирование (как в старой версии)
+        *wx = px + (*offx);
     }
 
-    // Y positioning
-    switch (relp.vr){
-        case UP:
-        case NORMAL_V: {
-            widget.y = parrent.y + (*offset_y);
-            if (parrelp == CWG_VERTICLLY)
-                (*offset_y) += widget.h;
-            else
-                (*offset_x) += widget.w;
-            break;
-        }
-        case MIDDLE_H: {
-            if (parrelp == CWG_VERTICLLY)
-                widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
-            else
-                widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
-            break;
-        }
-        case RIGHT: {
-            if (parrelp == CWG_VERTICLLY)
-                widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
-            else
-                widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
-            break;
-        }
-        case ABSOLUTE:
-            widget.y += parrent.y;
-            break;
+    // Вертикальное позиционирование
+    if (relp.margin_up != -1) {
+        *wy = py + (*offy) + ph * relp.margin_up;
+    } else if (relp.margin_down != -1) {
+        *wy = py + (*offy) + ph * (1.0f - relp.margin_down) - wh;
+    } else if (relp.margin_vcenter != -1) {
+        *wy = py + (*offy) + (ph / 2 - wh / 2) * (1 + relp.margin_vcenter);
+    } else {
+        // По умолчанию - верхнее позиционирование (как в старой версии)
+        *wy = py + (*offy);
     }
+
+    // Увеличение смещения (как в старой версии)
+    (*offy) += wh;
+    // if (parrelp == CWG_VERTICLLY) {
+    // } else {
+    //     (*offx) += ww;
+    // }
+
+    // // Y positioning
+    // switch (relp.vr){
+    //     case UP:
+    //     case NORMAL_V: {
+    //         widget.y = parrent.y + (*offset_y);
+    //         if (parrelp == CWG_VERTICLLY)
+    //             (*offset_y) += widget.h;
+    //         else
+    //             (*offset_x) += widget.w;
+    //         break;
+    //     }
+    //     case MIDDLE_H: {
+    //         if (parrelp == CWG_VERTICLLY)
+    //             widget.y = parrent.y + (*offset_y) + parrent.h / 2 - widget.h / 2;
+    //         else
+    //             widget.x = parrent.x + (*offset_x) + parrent.w / 2 - widget.w / 2;
+    //         break;
+    //     }
+    //     case RIGHT: {
+    //         if (parrelp == CWG_VERTICLLY)
+    //             widget.y = parrent.y + (*offset_y) + parrent.h - widget.h;
+    //         else
+    //             widget.x = parrent.x + (*offset_x) + parrent.w - widget.w;
+    //         break;
+    //     }
+    //     case ABSOLUTE:
+    //         widget.y += parrent.y;
+    //         break;
+    // }
 
     widget.x += loffset_x;
     widget.y += loffset_y;
@@ -565,8 +644,8 @@ struct Rect rect_clipping(
 }
 
 byte in_rect(struct Rect r1, i64 x, i64 y) {
-    return x >= r1.x && 
+    return x > r1.x && 
            x < (r1.x + r1.w) && 
-           y >= r1.y && 
+           y > r1.y && 
            y < (r1.y + r1.h);
 }

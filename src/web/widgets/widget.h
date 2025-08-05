@@ -22,6 +22,10 @@ struct WidgetRelp {
     f32 margin_right, margin_left;
     f32 margin_up,    margin_down;
     f32 margin_hcenter, margin_vcenter;
+    f32 h_absolute, v_absolute;
+    
+    byte has_habs, has_vabs;
+    byte is_fixed;
 };
 
 struct WidgetRelp gmargin(enum RELP_ENUM x, enum RELP_ENUM y, f32 v1, f32 v2);

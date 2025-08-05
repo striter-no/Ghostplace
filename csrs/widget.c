@@ -38,7 +38,12 @@ struct WidgetRelp gmargin(enum RELP_ENUM x, enum RELP_ENUM y, f32 v1, f32 v2){
         .margin_up = -1,
         .margin_down = -1,
         .margin_hcenter = -1,
-        .margin_vcenter = -1
+        .margin_vcenter = -1,
+        .h_absolute = 0, 
+        .v_absolute = 0,
+        .has_habs = 0,
+        .has_vabs = 0,
+        .is_fixed = 0
     };
 
     switch (x){
@@ -103,7 +108,7 @@ void upd_container_focus(struct tgr_app *app, struct Widget *cont_wg, struct Mou
     struct Rect r = cont_wg->rect;
     draw_box(app, &__debug_box, r);
 
-    tgr_pixel(app, (struct rgb){mouse_inside ? 0: 255, 0, mouse_inside ? 255: 0}, mouse->x, mouse->y, 0);
+    // tgr_pixel(app, (struct rgb){mouse_inside ? 0: 255, 0, mouse_inside ? 255: 0}, mouse->x, mouse->y, 0);
 
     // Если клик вне контейнера и нажата левая кнопка - сбрасываем фокус
     if (!mouse_inside && mouse->btn != MOUSE_NO_BTN) {
@@ -133,10 +138,8 @@ void upd_container_focus(struct tgr_app *app, struct Widget *cont_wg, struct Mou
                 rwg->x += cont->int_xofs;
                 rwg->y += cont->int_yofs;
 
-                // if (in_rect(wg->widget.rect, mouse->x, mouse->y)) {
-                    upd_container_focus(app, &wg->widget, mouse);
-                    has_child_under_mouse = has_child_under_mouse || ((struct Container*)wg->widget.wgdata)->is_focused;
-                // }
+                upd_container_focus(app, &wg->widget, mouse);
+                has_child_under_mouse = has_child_under_mouse || ((struct Container*)wg->widget.wgdata)->is_focused;
                 wg->widget.rect = cpy;
             }
         }
@@ -202,8 +205,10 @@ void update_positions(struct Widget *widget) {
             &offset_y
         );
         
-        child->widget.rect.x += cont->int_xofs;
-        child->widget.rect.y += cont->int_yofs;
+        if (!child->positioning.is_fixed){
+            child->widget.rect.x += cont->int_xofs;
+            child->widget.rect.y += cont->int_yofs;
+        }
         
         if (child->widget.wgtype == CONTAINER_WIDGET) {
             update_positions(&child->widget);
@@ -326,10 +331,12 @@ struct Rect snap_rect(
         *wy = py + (*offy);
     }
 
-    (*offy) += wh;
+    if ((!relp.has_vabs && parrelp == CWG_VERTICLLY) || 
+        (!relp.has_habs && parrelp != CWG_VERTICLLY))
+        (*offy) += wh;
 
-    widget.x += loffset_x;
-    widget.y += loffset_y;
+    widget.x += loffset_x + (relp.has_habs ? relp.v_absolute: 0);
+    widget.y += loffset_y + (relp.has_vabs ? relp.h_absolute: 0);
     return widget;
 }
 

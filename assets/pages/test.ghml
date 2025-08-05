@@ -1,4 +1,5 @@
 <cnt>
+    <img src="./assets/earth2.png" class="bg"></img>
     <cnt>
         <text>Test</text>
     </cnt>
@@ -12,6 +13,6 @@
 Test test test
 test2
 test test абвгд
-</text>
-    <img src="./assets/cat.png" dense="true" class="right"></img>
+    </text>
+    <img src="./assets/ghost.png" dense="true" class="right"></img>
 </cnt>

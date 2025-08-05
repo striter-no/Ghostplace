@@ -30,16 +30,6 @@ struct tag {
 
 static u64 next_uid = 1;
 
-// Утилиты для работы со строками
-static void trim_whitespace(char *str);
-
-static int safe_strncpy(char *dest, const char *src, size_t size);
-
-// Парсинг атрибутов
-static u16 parse_attributes(const char *str, struct attribute *attrs, u16 max_attrs);
-
-// Основная функция парсинга
+int readfile(const char *path, char **output);
 struct tag* parse_xml(const char *input);
-
-// Освобождение памяти (для полноты)
 void free_tag(struct tag *t);

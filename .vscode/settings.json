@@ -25,7 +25,9 @@
         "mouse.h": "c",
         "table.h": "c",
         "widget.h": "c",
-        "xml.h": "c"
+        "xml.h": "c",
+        "css.h": "c",
+        "parser.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/aarch64-linux-gnu-gcc"
 }

@@ -40,7 +40,8 @@ enum BOX_TYPE {
     BOX_ONE_LINE,
     BOX_DOUBLE,
     BOX_ROUNDED,
-    BOX_PRIMITIVE
+    BOX_PRIMITIVE,
+    BOX_TYPE_UNDEFINED
 };
 
 struct Rect {

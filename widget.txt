@@ -167,50 +167,20 @@ void upd_container(
                 cont->int_xofs += 2;
         }
     }
+
     for (u64 i = 0; i < tb->size; i++){
         struct ExtCWidget *wg;
         table_ptr(tb, (ubyte*)tb->keys + i * tb->key_size, (void**)&wg);
+        
+        i64 h_dt = cont_wg->orig_state.x - wg->widget.orig_state.x;
+        i64 v_dt = cont_wg->orig_state.y - wg->widget.orig_state.y;
+        
+        wg->widget.rect.x = cont_wg->rect.x + h_dt;
+        wg->widget.rect.y = cont_wg->rect.y + v_dt;
 
         if (wg->widget.wgtype == CONTAINER_WIDGET){
             upd_container(app, &wg->widget, mouse);
         }
-    }
-}
-
-void update_positions(struct Widget *widget) {
-    if (widget->wgtype != CONTAINER_WIDGET) 
-        return;
-    
-    struct Container *cont = widget->wgdata;
-    struct Table *tb = &cont->widgets;
-    i64 offset_x = 0, offset_y = 0;
-    
-    for (u64 i = 0; i < tb->size; i++) {
-        struct ExtCWidget *child;
-        table_ptr(tb, (ubyte*)tb->keys + i * tb->key_size, (void**)&child);
-        
-        struct Rect orig_rect = child->widget.rect;
-        
-        child->widget.rect = snap_rect(
-            widget->rect,
-            child->widget.rect,
-            child->widget.orig_state,
-            child->positioning,
-            child->widget.wgtype,
-            cont->storing_wgc,
-            &offset_x,
-            &offset_y
-        );
-        
-        child->widget.rect.x += cont->int_xofs;
-        child->widget.rect.y += cont->int_yofs;
-        
-        if (child->widget.wgtype == CONTAINER_WIDGET) {
-            update_positions(&child->widget);
-        }
-        
-        child->widget.rect.w = orig_rect.w;
-        child->widget.rect.h = orig_rect.h;
     }
 }
 
@@ -229,7 +199,6 @@ void add_widget(
     struct ExtCWidget ewg = {0};
     struct Widget copy = {0};
     widget_copy(&copy, &to_add);
-    copy.uid = rand() % x_u64;
 
     ewg.positioning = relp;
     ewg.widget = copy;
@@ -333,19 +302,42 @@ struct Rect snap_rect(
     return widget;
 }
 
-void draw_container(struct tgr_app *app, const struct Container *cont, struct Rect rect) {
+void draw_container(
+    struct tgr_app *app, 
+    const struct Container *cont, 
+    struct Rect rect
+){
     struct Table *tb = &cont->widgets;
-    for (u64 i = 0; i < tb->size; i++) {
-        struct ExtCWidget *wg;
-        table_ptr(tb, (ubyte*)tb->keys + i * tb->key_size, (void**)&wg);
+
+    i64 offset_x = 0, offset_y = 0;
+    for (u64 i = 0; i < tb->size; i++){
+        struct ExtCWidget wg;
+        table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
+
+        struct Rect *rwg = &wg.widget.rect;
+        *rwg = snap_rect(rect, *rwg, wg.widget.orig_state, wg.positioning, wg.widget.wgtype, cont->storing_wgc, &offset_x, &offset_y);
         
-        struct Rect clipped = rect_clipping(rect, wg->widget.rect);
-        if (clipped.w != 0 && clipped.h != 0) {
-            if (wg->widget.wgtype == BOX_WIDGET) {
-                ((struct Box*)wg->widget.wgdata)->srect = clipped;
+        struct Rect copy = *rwg;
+        rwg->x += cont->int_xofs;
+        rwg->y += cont->int_yofs;
+        // if (wg.widget.wgtype != BOX_WIDGET)
+        *rwg = rect_clipping(rect, *rwg);
+        
+        if (rwg->w != 0 && rwg->h != 0){
+            // struct Rect srect_cp;
+            if (wg.widget.wgtype == BOX_WIDGET){
+                struct Rect *lrwg = &((struct Box*)wg.widget.wgdata)->srect;
+                *lrwg = *rwg;
             }
-            draw_widget(app, &wg->widget);
+
+            draw_widget(app, &wg.widget);
+
+            // if (wg.widget.wgtype == BOX_WIDGET){
+            //     ((struct Box*)wg.widget.wgdata)->srect = srect_cp;
+            // }
         }
+        
+        *rwg = copy;
     }
 }
 
@@ -377,8 +369,8 @@ void create_widget(
     (*out)->wgdata = malloc(bytes);
     (*out)->orig_state = rect;
     (*out)->rect       = rect;
+    (*out)->id         = 0;
     (*out)->uid        = rand() % x_u64;
-    (*out)->class[0] = '\0';
 }
 
 void adjust_rect(
@@ -495,6 +487,7 @@ void free_widget(
     free(widget->wgdata);
     widget->wgdata = NULL;
     widget->typesize = 0;
+    widget->id = 0;
     widget->uid = 0;
     widget->rect = (struct Rect){0};
     widget->wgtype = WIDGET_UNDEFINED;
@@ -536,8 +529,8 @@ void widget_copy(
     dest->typesize = src->typesize;
     dest->wgtype = src->wgtype;
     dest->wgdata = malloc(src->typesize);
+    dest->id = src->id;
     dest->uid = src->uid;
-    strcpy(dest->class, src->class);
 
     switch (dest->wgtype){
         case IMAGE_WIDGET: {

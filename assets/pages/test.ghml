@@ -1,20 +1,17 @@
-<main>
-    <cnt store="vt">
-        <cnt store="hz" id=1 >
-            <box w=10 h=20></box>
-            <box w=10 h=20></box>
-            <box w=10 h=20></box>
-        </cnt>
-        <cnt store="hz" id=1 >
-            <box w=10 h=20></box>
-            <box w=10 h=20></box>
-            <box w=10 h=20></box>
-        </cnt>
-        <text clr="0 255 0" id=2>
-        Test test test
-        test2
-        test test абвгд
-        </text>
-        <img src="./assets/cat.png" id=3></img>
+<cnt>
+    <cnt>
+        <text>Test</text>
     </cnt>
-</main>
+    <cnt store="hz">
+        <box w=10 h=20></box>
+        <box w=10 h=20></box>
+        <box w=10 h=20></box>
+    </cnt>
+    <box w=20 h=20></box>
+    <text clr="0 255 0" class="left">
+Test test test
+test2
+test test абвгд
+</text>
+    <img src="./assets/cat.png" dense="true" class="right"></img>
+</cnt>

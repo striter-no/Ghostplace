@@ -49,13 +49,13 @@ int main(){
         free(subcont);
     }
 
-    struct Widget *text = NULL; create_widget(&text, TEXT_WIDGET, (struct Rect){0, 0, 10, -1} );
+    struct Widget *text = NULL; create_widget(&text, TEXT_WIDGET, (struct Rect){0, 0, -1, -1} );
     *(struct Text *)(text->wgdata) = (struct Text){
         .base_clr = (struct rgb){0, 255, 0},
         .style = styles[NO_STYLE],
         .unicode_txt = NULL
     };
-    utf8_conv("Test test test\ntest2\ntest test абвгд", &(((struct Text *)(text->wgdata))->unicode_txt));
+    utf8_conv("Test test test", &(((struct Text *)(text->wgdata))->unicode_txt));
 
     adjust_rect(text);
     add_widget(main_cnt, *text, &imp_uid, gmargin(M_HCENTER, M_UP, 0, 0));
@@ -102,10 +102,10 @@ void update(struct tgr_app *app){
 
     // WIDGETS =======================
     
-    struct ExtCWidget *wg;
-    get_widget(main_cnt, imp_uid, &wg);
-    struct Text *txt = wg->widget.wgdata;
-    txt->base_clr.r = 255;
+    // struct ExtCWidget *wg;
+    // get_widget(main_cnt, imp_uid, &wg);
+    // struct Text *txt = wg->widget.wgdata;
+    // txt->base_clr.r = 255;
     
     upd_container_focus(app, main_cnt, &mouse);
     upd_container(app, main_cnt, &mouse);

@@ -14,7 +14,8 @@ enum RELP_ENUM {
     M_UP,
     M_DOWN,
     M_HCENTER,
-    M_VCENTER
+    M_VCENTER,
+    M_RELP_UNDEFINED
 };
 
 struct WidgetRelp {
@@ -33,6 +34,8 @@ struct Widget {
 
     struct Rect rect;
     struct Rect orig_state;
+    u64 uid;
+    char class[100];
 };
 
 void create_widget(
@@ -101,6 +104,8 @@ void upd_container(
     struct Widget *cont_wg,
     struct Mouse  *mouse
 );
+
+void update_positions(struct Widget *widget);
 
 void add_widget(
     struct Widget *cont_wg,

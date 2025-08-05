@@ -1,16 +1,14 @@
-#1 {
+all {
     mg.hcenter = 0
     mg.up = 0
 }
 
-#2 {
-    mg.hcenter = 0
-    mg.up = 0
+#left {
+    mg.left = 0
 }
 
-#3 {
+#right {
     mg.right = 0
-    mg.up = 0
 }
 
 text {

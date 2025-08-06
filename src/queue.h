@@ -24,4 +24,6 @@ int push_buffer(struct queue *queue, struct qbuffer *buffer);
 int pop_buffer(struct queue *queue, struct qbuffer *b);
 int forward_queue(struct queue *src, struct queue *dest);
 
+void copy_qbuffer(struct qbuffer *dst, struct qbuffer *src);
+void create_qbuffer(struct qbuffer *out, size_t bytes);
 void clear_qbuffer(struct qbuffer *buff);

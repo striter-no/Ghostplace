@@ -3,6 +3,7 @@
         ".compileconf": "toml",
         "*.msg": "plaintext",
         "*.txt": "plaintext",
+        "*.ghml": "xml",
         "tgr.h": "c",
         "imgs.h": "c",
         "chrono": "cpp",
@@ -27,7 +28,9 @@
         "widget.h": "c",
         "xml.h": "c",
         "css.h": "c",
-        "parser.h": "c"
+        "parser.h": "c",
+        "queue.h": "c",
+        "netdb.h": "c"
     },
-    "C_Cpp.default.compilerPath": "/usr/bin/aarch64-linux-gnu-gcc"
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc-14"
 }

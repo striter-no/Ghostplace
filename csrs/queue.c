@@ -1,5 +1,20 @@
 #include <queue.h>
 
+void copy_qbuffer(struct qbuffer *dst, struct qbuffer *src){
+    create_qbuffer(dst, src->size);
+    memcpy(dst->bytes, src->bytes, src->size);
+}
+
+void create_qbuffer(struct qbuffer *out, size_t bytes){
+    out->bytes = malloc(bytes);
+    out->size = bytes;
+
+    if (!out->bytes){
+        fprintf(stderr, "[queue][create_buffer][failure] malloc for %zu bytes\n", bytes);
+        abort();
+    }
+}
+
 struct queue create_queue(){
     struct queue o = {0};
     pthread_mutex_init(&o.mtx, NULL);

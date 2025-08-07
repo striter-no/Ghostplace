@@ -30,6 +30,5 @@ struct tag {
 
 static u64 next_uid = 1;
 
-int readfile(const char *path, char **output);
 struct tag* parse_xml(const char *input);
 void free_tag(struct tag *t);

@@ -1,32 +1,5 @@
 #include <xml.h>
 
-int readfile(const char *path, char **output){
-    FILE *file = fopen(path, "r");
-
-    fseek(file, 0, SEEK_END);
-    long file_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    (*output) = (char*)malloc(file_size + 1);
-    if (!(*output)) {
-        fclose(file); perror("malloc");
-        return 2;
-    }
-
-    size_t bytes_read = fread((*output), 1, file_size, file);
-    if (bytes_read != file_size) {
-        fprintf(stderr, "Read error: read %zu from %ld bytes\n", bytes_read, file_size);
-        free((*output));
-        fclose(file);
-        return 3;
-    }
-    (*output)[file_size] = '\0';
-    
-    fclose(file);
-    return 0;
-}
-
-
 // Утилиты для работы со строками
 static void trim_whitespace(char *str) {
     char *end;

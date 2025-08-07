@@ -30,7 +30,9 @@
         "css.h": "c",
         "parser.h": "c",
         "queue.h": "c",
-        "netdb.h": "c"
+        "netdb.h": "c",
+        "cstdlib": "cpp",
+        "cstdint": "c"
     },
-    "C_Cpp.default.compilerPath": "/usr/bin/gcc-14"
+    "C_Cpp.default.compilerPath": "/usr/bin/clang-18"
 }

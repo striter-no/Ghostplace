@@ -1,4 +1,4 @@
-#include <webnet/tcpserv.h>
+#include <webnet/net/tcpserv.h>
 
 void *detached(void *args){
     struct TCP_server *serv = args;

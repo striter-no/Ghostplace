@@ -5,6 +5,6 @@ CC=$2
 reset
 $CC -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc  \
 && printf "\n\n" \
-&& valgrind --exit-on-first-error=no --leak-check=yes --track-origins=yes ./"$1"
+&& valgrind --exit-on-first-error=no --leak-check=full --show-leak-kinds=all --track-origins=yes ./"$1"
 
 mv ./"$1" ./bin

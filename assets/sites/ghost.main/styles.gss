@@ -1,0 +1,26 @@
+all {
+    mg.hcenter = 0
+    mg.up = 0
+}
+
+#bg {
+    mg.left = 0
+    h.absolute = -50
+    v.absolute = -100
+    clr.r = 50
+    clr.g = 50
+    clr.b = 50
+    fixed = true
+}
+
+#left {
+    mg.left = 0
+}
+
+#right {
+    mg.right = 0
+}
+
+text {
+    clr.r = 255
+}

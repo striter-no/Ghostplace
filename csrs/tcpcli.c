@@ -33,38 +33,49 @@ void tcp_cli_disconn(struct TCP_client *cli){
     clear_queue(&cli->output_queue);
 }
 
+static int __read_polling(int sockfd){
+    struct pollfd pfd = {
+        .fd = sockfd,
+        .events = POLLIN
+    };
+    
+    int ret = poll(&pfd, 1, 0);
+    
+    if (ret == -1) {
+        if (errno == EINTR) {
+            return 2;
+        }
+        fprintf(stderr, "[error] poll failed: %s\n", strerror(errno));
+        return -1;
+    }
+    
+    if (ret == 0) {
+        return 2;
+    }
+    
+    // Проверяем тип события
+    if (pfd.revents & (POLLHUP | POLLERR)) {
+        printf("[log] server down (POLLHUP/POLLERR)\n");
+        return -2;
+    }
+    
+    if (!(pfd.revents & POLLIN)) {
+        return 2;
+    }
+
+    return 1;
+}
+
 void tcp_cli_run(struct TCP_client *cli){
     cli->running = 1;
     char local_running = 1;
     while (cli->running && local_running){
-        struct pollfd pfd = {
-            .fd = cli->sockfd,
-            .events = POLLIN
-        };
-        
-        int ret = poll(&pfd, 1, 0);
-        
-        if (ret == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            fprintf(stderr, "[error] poll failed: %s\n", strerror(errno));
-            break;
-        }
-        
-        if (ret == 0) {
-            goto answer;
-            continue;
-        }
-        
-        // Проверяем тип события
-        if (pfd.revents & (POLLHUP | POLLERR)) {
-            printf("[log] server down (POLLHUP/POLLERR)\n");
-            break;
-        }
-        
-        if (!(pfd.revents & POLLIN)) {
-            goto answer;
+
+        int pollstatus = __read_polling(cli->sockfd);
+        if (pollstatus != 1) {
+            // Обработка ошибок и отключения
+            if (pollstatus < 0) break;
+            if (pollstatus == 2) goto answer;
             continue;
         }
 
@@ -102,12 +113,13 @@ void tcp_cli_run(struct TCP_client *cli){
             memcpy(buffer + buff_size, inp_buffer, got_bytes);
 
             buff_size += got_bytes;
-            if (got_bytes <= TCP_MAX_BUFFER)
+            if (got_bytes < TCP_MAX_BUFFER){
                 break;
+            }
         }
 
         // inp_buffer[got_bytes] = '\0';
-        // printf("[log] got this bytes: %s\n", inp_buffer);
+        printf("[log] got %d bytes\n", buff_size);
 
         struct qbuffer ibuf;
         create_qbuffer(&ibuf, buff_size + 1);

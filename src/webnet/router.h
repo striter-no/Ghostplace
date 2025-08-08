@@ -115,5 +115,5 @@ void load_sites_db(
         load_site(&out[i], main_dirpath, dirs[i]);
     }
 
-    free_directories(dirs, dir_num);
+    free_list_cstr(dirs, dir_num);
 }

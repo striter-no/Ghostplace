@@ -43,8 +43,8 @@ static u32 count_dig_num(u32 num){
 
 void proto_print(struct proto_msg *msg){
     switch (msg->type){
-        case GET: printf("GET ");
-        case POST: printf("POST ");
+        case GET: printf("GET "); break;
+        case POST: printf("POST "); break;
     }
 
     switch (msg->conttype){

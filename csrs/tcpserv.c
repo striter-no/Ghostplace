@@ -6,40 +6,50 @@ struct __thread_args {
     int *running;
 };
 
+static int __read_polling(int sockfd){
+    struct pollfd pfd = {
+        .fd = sockfd,
+        .events = POLLIN
+    };
+    
+    int ret = poll(&pfd, 1, 0);
+    
+    if (ret == -1) {
+        if (errno == EINTR) {
+            return 2;
+        }
+        fprintf(stderr, "[error] poll failed: %s\n", strerror(errno));
+        return -1;
+    }
+    
+    if (ret == 0) {
+        return 2;
+    }
+    
+    // Проверяем тип события
+    if (pfd.revents & (POLLHUP | POLLERR)) {
+        printf("[log] client down (POLLHUP/POLLERR)\n");
+        return -2;
+    }
+    
+    if (!(pfd.revents & POLLIN)) {
+        return 2;
+    }
+
+    return 1;
+}
+
 void *__TCP_serv_cli_thread(void *voidargs){
     struct __thread_args *args = voidargs;
     struct __TCP_serv_cli *cli = args->cli;
     
     char local_running = 1;
     while (*args->running && local_running){
-        struct pollfd pfd = {
-            .fd = cli->connfd,
-            .events = POLLIN
-        };
-        
-        int ret = poll(&pfd, 1, 0);
-        
-        if (ret == -1) {
-            if (errno == EINTR) {
-                continue;
-            }
-            fprintf(stderr, "[error] poll failed: %s\n", strerror(errno));
-            break;
-        }
-        
-        if (ret == 0) {
-            goto answer;
-            continue;
-        }
-        
-        // Проверяем тип события
-        if (pfd.revents & (POLLHUP | POLLERR)) {
-            printf("[log] client disconnected (POLLHUP/POLLERR)\n");
-            break;
-        }
-        
-        if (!(pfd.revents & POLLIN)) {
-            goto answer;
+
+        int pollstatus = __read_polling(cli->connfd);
+        if (pollstatus != 1) {
+            if (pollstatus < 0) break;
+            if (pollstatus == 2) goto answer;
             continue;
         }
 
@@ -77,8 +87,10 @@ void *__TCP_serv_cli_thread(void *voidargs){
             memcpy(buffer + buff_size, inp_buffer, got_bytes);
 
             buff_size += got_bytes;
-            if (got_bytes <= TCP_MAX_BUFFER)
+            
+            if (got_bytes < TCP_MAX_BUFFER){
                 break;
+            }
         }
 
         // inp_buffer[got_bytes] = '\0';
@@ -231,7 +243,7 @@ void tcp_loop(struct TCP_server *serv){
     __sync_fetch_and_sub(&serv->running, 1);
 }
 void tcp_end_server(struct TCP_server *serv){
-    
+    __sync_fetch_and_sub(&serv->running, 1);
     shutdown(serv->sockfd, SHUT_RDWR);
     
     while (serv->act_clients_n > 0) {

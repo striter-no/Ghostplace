@@ -346,6 +346,8 @@ int decompose_site(
 
         free(domain);
     }
+
+    return 0;
 }
 
 void set_proto_content(

@@ -1,10 +1,71 @@
 #include <webnet/site.h>
 
-void load_asset(
-    struct site_asset *asset,
-    const char *full_path
+static void smart_strcat(
+    char **output,
+    char *to_add
 ){
+    (*output) = (char*)realloc((*output), strlen((*output)) + strlen(to_add) + 1);
+    strcat((*output), to_add);
+}
+
+static size_t toksplit(const char *src, const char *delim, char ***tokens) {
+    if (src == NULL || delim == NULL || tokens == NULL)
+        return 0;
+
+    *tokens = NULL;
     
+    char *str_copy = strdup(src);
+    if (str_copy == NULL)
+        return 0;
+    
+    size_t count = 0;
+    char *saveptr;
+    char *token = strtok_r(str_copy, delim, &saveptr);
+    
+    while (token != NULL) {
+        count++;
+        token = strtok_r(NULL, delim, &saveptr);
+    }
+    
+    if (count == 0) {
+        free(str_copy);
+        return 0;
+    }
+    
+    *tokens = malloc(count * sizeof(char *));
+    if (*tokens == NULL) {
+        free(str_copy);
+        return 0;
+    }
+    
+    free(str_copy);
+    str_copy = strdup(src);
+    if (str_copy == NULL) {
+        free(*tokens);
+        *tokens = NULL;
+        return 0;
+    }
+    
+    size_t index = 0;
+    token = strtok_r(str_copy, delim, &saveptr);
+    
+    while (token != NULL) {
+        (*tokens)[index] = strdup(token);
+        if ((*tokens)[index] == NULL) {
+            for (size_t i = 0; i < index; i++)
+                free((*tokens)[i]);
+
+            free(*tokens);
+            *tokens = NULL;
+            free(str_copy);
+            return 0;
+        }
+        index++;
+        token = strtok_r(NULL, delim, &saveptr);
+    }
+    
+    free(str_copy);
+    return count;
 }
 
 void save_site(
@@ -240,11 +301,9 @@ int compose_site(
                 }
             }
 
-            char *asset_path = (char*)calloc(strlen(local_domain) + strlen(asset->name) + 2, sizeof(char)); // +2 for '/' and '\0'
-            strcat(asset_path, local_domain); // need to be ended with '/'
+            char *asset_path = (char*)calloc(strlen(local_domain) + strlen(asset->name) + 1, sizeof(char)); // +1 for '\0'
+            strcat(asset_path, local_domain);
             strcat(asset_path, asset->name);
-            asset_path[strlen(local_domain) + strlen(asset->name)] = '/';
-            asset_path[strlen(local_domain) + strlen(asset->name)+ 1] = '\0';
             
             free(local_domain);
             (*msgs)[counter++] = (struct proto_msg){
@@ -271,41 +330,6 @@ int compose_site(
     return 0;
 }
 
-static void extract_parts_strtok(const char *asset_path, char **domain, char **asset_name) {
-    
-    char *path_copy = strdup(asset_path);
-    if (!path_copy) {
-        *domain = *asset_name = NULL;
-        return;
-    }
-    
-    char *saveptr;
-    char *token;
-    char *last_token = NULL;
-    
-    token = strtok_r(path_copy, "/", &saveptr);
-    while (token) {
-        last_token = token;
-        token = strtok_r(NULL, "/", &saveptr);
-    }
-    
-    *asset_name = last_token ? strdup(last_token) : NULL;
-    
-    const char *last_slash = strrchr(asset_path, '/');
-    if (last_slash && *asset_name) {
-        size_t domain_len = last_slash - asset_path;
-        *domain = malloc(domain_len + 1);
-        if (*domain) {
-            strncpy(*domain, asset_path, domain_len);
-            (*domain)[domain_len] = '\0';
-        }
-    } else {
-        *domain = NULL;
-    }
-    
-    free(path_copy);
-}
-
 int decompose_site(
     struct site *site,
     struct proto_msg *msgs
@@ -315,7 +339,7 @@ int decompose_site(
     site->domain_name = strdup(msgs[0].path);
     
     size_t msgs_size = 0, has_gss = 0;
-    sscanf(msgs[0].content, "%d %d", &msgs_size, &has_gss); // 316
+    sscanf(msgs[0].content, "%d %d", &msgs_size, &has_gss);
 
     site->ghml_content = (char*)malloc(msgs[1].cont_size);
     memcpy(site->ghml_content, msgs[1].content, msgs[1].cont_size);
@@ -337,17 +361,139 @@ int decompose_site(
         asset->content = (uint8_t*)malloc(msg->cont_size);
         memcpy(asset->content, msg->content, asset->cont_len);
 
-        char *domain = NULL;
-        char *asset_name = NULL;
+        char **tokens = NULL;
+        size_t ntoks = toksplit(msg->path, "/", &tokens);
         
-        extract_parts_strtok(msg->path, &domain, &asset_name);
-        asset->name = asset_name;
+        if (ntoks < 2){
+            free_list_cstr(tokens, ntoks);
+            return -1;
+        }
+
+        asset->name = strdup(tokens[1]);
         asset->type = msg->conttype;
 
-        free(domain);
+        free_list_cstr(tokens, ntoks);
     }
 
     return 0;
+}
+
+void compose_enum(
+    struct site *site,
+    struct proto_msg *msg
+){
+    msg->type = GET;
+    msg->conttype = TEXT_CONT;
+    msg->path = strdup("/");
+    msg->proto_ver = 0;
+    msg->content = strdup("");
+    msg->cont_size = 1;
+    
+    smart_strcat((char**)&msg->content, "index.ghml\n");
+    if (site->has_gss)
+        smart_strcat((char**)&msg->content, "styles.gss\n");
+    
+    for (size_t i = 0; i < site->assets_n; i++){
+        char lbuff[200] = "assets/";
+        strcat(lbuff, site->assets[i].name);
+        size_t old_size = strlen(lbuff);
+        lbuff[old_size] = '\n';
+        lbuff[old_size + 1] = '\0';
+        smart_strcat((char**)&msg->content, lbuff);
+    }
+
+    msg->cont_size = strlen(msg->content) + 1;
+}
+
+int get_get_messages(
+    const struct proto_msg *a_enum_msg,
+    struct proto_msg **messages,
+    size_t *messages_n
+){
+    char **tokens = NULL;
+    size_t ntoks = toksplit(a_enum_msg->content, "\n", &tokens);
+
+    if (ntoks == 0) {
+        free_list_cstr(tokens, ntoks);
+        return -1;
+    }
+
+    (*messages) = (struct proto_msg*)calloc(ntoks, sizeof(struct proto_msg));
+    for (size_t i = 0; i < ntoks; i++){
+        struct proto_msg *msg = &(*messages)[i];
+        msg->type = GET;
+        msg->conttype = TEXT_CONT;
+        msg->proto_ver = 0;
+        msg->content = strdup("");
+        msg->cont_size = 1;
+
+        msg->path = strdup(tokens[i]);
+    }
+
+    *messages_n = ntoks;
+    free_list_cstr(tokens, ntoks);
+    return 0;
+}
+
+int compose_by_path(
+    struct site *site,
+    const char *path,
+
+    struct proto_msg *msg
+){
+    char **tokens = NULL;
+    size_t ntoks = toksplit(path, "/", &tokens);
+    
+    if (ntoks == 0){
+        return -1;
+    }
+
+    msg->type = GET;
+    msg->conttype = TEXT_CONT;
+    msg->path = strdup(path);
+    msg->proto_ver = 0;
+    msg->content = NULL;
+    msg->cont_size = 1;
+
+    if (strcmp(tokens[0], "index.ghml") == 0){
+        set_proto_content(msg, site->ghml_content, strlen(site->ghml_content) + 1);
+        free_list_cstr(tokens, ntoks);
+        return 0;
+    }
+
+    if (strcmp(tokens[0], "styles.gss") == 0){
+        if (!site->has_gss) {
+            free_list_cstr(tokens, ntoks);
+            return -3;
+        }
+        
+        set_proto_content(msg, site->gss_content, strlen(site->gss_content) + 1);
+        free_list_cstr(tokens, ntoks);
+        return 0;
+    }
+
+    if (strcmp(tokens[0], "assets") == 0){
+        if (site->assets_n == 0){
+            free_list_cstr(tokens, ntoks);
+            return -4;
+        }
+        
+        for (size_t i = 0; i < site->assets_n; i++){
+            if (strcmp(site->assets[i].name, tokens[1]) == 0){
+                struct site_asset *asset = &site->assets[i];
+                set_proto_content(msg, asset->content, asset->cont_len);
+                
+                free_list_cstr(tokens, ntoks);
+                return 0;
+            }
+        }
+        
+        free_list_cstr(tokens, ntoks);
+        return -5;
+    }
+
+    free_list_cstr(tokens, ntoks);
+    return -2;
 }
 
 void set_proto_content(

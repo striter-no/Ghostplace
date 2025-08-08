@@ -24,7 +24,7 @@ int main(){
     pthread_create(&main_thread, NULL, detached, (void*)&cli);
 
     struct qbuffer qmsg;
-    struct proto_msg pmsg = {
+    struct proto_msg enum_ask = {
         .type = GET,
         .conttype = TEXT_CONT,
         .path = strdup("/"),
@@ -33,8 +33,8 @@ int main(){
         .proto_ver = 0
     };
 
-    proto_serial(&pmsg, &qmsg);
-    proto_msg_free(&pmsg);
+    proto_serial(&enum_ask, &qmsg);
+    proto_msg_free(&enum_ask);
 
     push_buffer(&cli.output_queue, &qmsg);
     
@@ -47,26 +47,37 @@ int main(){
         printf("[log] awaiting for messages\n");
         struct qbuffer ibuff;
         await_pop(&cli.input_queue, &ibuff);
-        msgs = (struct proto_msg*)realloc(msgs, sizeof(struct proto_msg) * (++got_msgs));
-        proto_deserial(&msgs[got_msgs - 1], &ibuff);
+
+        struct proto_msg enum_msg;
+        proto_deserial(&enum_msg, &ibuff);
         clear_qbuffer(&ibuff);
+        proto_print(&enum_msg);
 
-        size_t msgs_size = 0, has_gss = 0;
-        sscanf(msgs[0].content, "%d %d", &msgs_size, &has_gss);
+        struct proto_msg *get_msgs = NULL;
+        size_t msgs_size = 0;
+        int out = get_get_messages(&enum_msg, &get_msgs, &msgs_size);
+        proto_msg_free(&enum_msg);
 
-        printf("[log] incoming %d messages\n", msgs_size);
+        printf("[log]{%d} requesting %d messages\n", out, msgs_size);
+        for (size_t i = 0; i < msgs_size; i++){
+            struct qbuffer obuff;
+            proto_serial(&get_msgs[i], &obuff);
+            push_buffer(&cli.output_queue, &obuff);
+            clear_qbuffer(&obuff);
 
-        for (size_t i = 1; i < msgs_size; i++){
             struct qbuffer ibuff;
-            push_buffer(&cli.output_queue, &qmsg);
             await_pop(&cli.input_queue, &ibuff);
-            printf("[log] got %d message\n", i);
+            printf("[log] got %d message\n", i + 1);
             
             msgs = (struct proto_msg*)realloc(msgs, sizeof(struct proto_msg) * (++got_msgs));
-            proto_deserial(&msgs[got_msgs - 1], &ibuff);
-            proto_print(&msgs[got_msgs - 1]);
+            proto_deserial(&msgs[i], &ibuff);
+            proto_print(&msgs[i]);
             clear_qbuffer(&ibuff);
         }
+
+        for (size_t i = 0; i < msgs_size; i++)
+            proto_msg_free(&get_msgs[i]);
+        free(get_msgs);
     }
     tcp_cli_disconn(&cli);
 

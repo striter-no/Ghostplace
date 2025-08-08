@@ -43,7 +43,7 @@ int table_add(struct Table *tb, const void *key, const void *val) {
     void *vbuffer = realloc(tb->values, tb->value_size * (tb->size + 1));
     if (!vbuffer) {
         // Откатываем изменения при ошибке
-        realloc(tb->keys, tb->key_size * tb->size);
+        tb->keys = realloc(tb->keys, tb->key_size * tb->size);
         return 2;
     }
 

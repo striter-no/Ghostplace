@@ -50,9 +50,27 @@ int compose_site(
     struct proto_msg **msgs
 );
 
+void compose_enum(
+    struct site *site,
+    struct proto_msg *msg
+);
+
 int decompose_site(
     struct site *site,
     struct proto_msg *msgs
+);
+
+int get_get_messages(
+    const struct proto_msg *a_enum_msg,
+    struct proto_msg **messages,
+    size_t *messages_n
+);
+
+int compose_by_path(
+    struct site *site,
+    const char *path,
+
+    struct proto_msg *msg
 );
 
 void set_proto_content(

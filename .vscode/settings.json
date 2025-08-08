@@ -37,7 +37,9 @@
         "stddef.h": "c",
         "strutils.h": "c",
         "site.h": "c",
-        "tcpcli.h": "c"
+        "tcpcli.h": "c",
+        "keyboard.h": "c",
+        "router.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/clang-18"
 }

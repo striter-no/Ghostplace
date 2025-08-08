@@ -4,7 +4,7 @@ const struct ESC_SEQ __esc_map[] = {
     {"\x1d", "ctrl + ]"},
     // {"\x1b", "ctrl + ["},
     {"\x09", "tab"},
-    {"\x0a", "nl"},
+    {"\x0a", "enter"},
     {"\x7f", "bs"},
     {"\x08", "ctrl + bs"},
     {"\x19", "ctrl + y"},

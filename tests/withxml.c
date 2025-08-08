@@ -50,8 +50,6 @@ int main(){
     css_parsewidgets(&main_cnt, css_blocks);
     free_tag(xml_root);
     free_css(css_blocks);
-
-    struct Container *cnt = main_cnt->wgdata;
     
     // RUN ===================
     enable_mouse(MOUSE_NORMAL_TRACKING);

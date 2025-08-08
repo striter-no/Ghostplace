@@ -1,6 +1,7 @@
 #include <webnet/router.h>
 #include <strutils.h>
 
+pthread_mutex_t sites_db_mtx = PTHREAD_MUTEX_INITIALIZER;
 struct site *sites_db = NULL;
 size_t sites_num = 0;
 void callback(
@@ -45,13 +46,12 @@ int main(){
 
     create_router(
         &router,
-        "ghost",
         "./assets/sites",
         "127.0.0.1",
         8520
     );
 
-    load_sites_db(&sites_db, &sites_num, "./assets/sites");
+    load_sites_db(&sites_db, &sites_num, router.store_dir);
     run_router(&router, callback);
 
     for (size_t i = 0; i < sites_num; i++){
@@ -60,4 +60,5 @@ int main(){
     }
     free(sites_db);
     destroy_router(&router);
+    pthread_mutex_destroy(&sites_db_mtx);
 }

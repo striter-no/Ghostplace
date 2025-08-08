@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+CC=$2
+
+reset
+$CC -pedantic -Wall -Wextra -g -o "$1" ./"$1".c ./csrs/* -I src -lm -lutf8proc  \
+&& mv ./"$1" ./bin

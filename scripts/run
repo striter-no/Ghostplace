@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+reset
+./bin/"$1"

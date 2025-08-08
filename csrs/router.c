@@ -24,7 +24,6 @@ void *__router_detached_tcp(void *args){
 
 void create_router(
     struct router *router,
-    const char *domain,
     const char *store_dir,
 
     const char *bind_ip,
@@ -34,15 +33,11 @@ void create_router(
     tcp_listen(&router->server, 10);
     router->sites = NULL;
     router->sites_num = 0;
-
-    router->domain = strdup(domain);
     router->store_dir = strdup(store_dir);
 }
 
 void destroy_router(struct router *router){
-    free(router->domain);
     free(router->store_dir);
-    router->domain = NULL;
     router->store_dir = NULL;
 
     for (size_t i = 0; i < router->sites_num; i++)

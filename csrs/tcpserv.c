@@ -176,7 +176,7 @@ void tcp_listen(struct TCP_server *serv, int cli_max){
 void tcp_loop(struct TCP_server *serv){
     serv->first_client = 1;
     __sync_fetch_and_add(&serv->running, 1);
-    while ((serv->act_clients_n > 0 || serv->first_client) && serv->running) {
+    while (serv->running) { // (serv->act_clients_n > 0 || serv->first_client) && 
         struct pollfd pfd = {
             .fd = serv->sockfd,
             .events = POLLIN

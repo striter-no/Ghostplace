@@ -7,8 +7,6 @@
 struct router {
     pthread_t detached_thr;
     struct TCP_server server;
-
-    char *domain;
     char *store_dir;
 
     struct site *sites;
@@ -19,7 +17,6 @@ void *__router_detached_tcp(void *args);
 
 void create_router(
     struct router *router,
-    const char *domain,
     const char *store_dir,
 
     const char *bind_ip,

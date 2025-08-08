@@ -1,6 +1,8 @@
 #include <web/parser.h>
 
 void xml_addwidgets(
+    const char *path_to_dir,
+    
     struct tgr_app *app,
     struct Widget **ptr,
     struct tag *root,
@@ -12,7 +14,7 @@ void xml_addwidgets(
         exit(-1);
     }
 
-    init_widget(root, ptr);
+    init_widget(path_to_dir, root, ptr);
     struct Widget *cwg = *ptr;
     
     if (level == 0){
@@ -22,7 +24,7 @@ void xml_addwidgets(
     
     for (int i = 0; i < root->childrens_num; i++){
         struct Widget *wg = NULL;
-        xml_addwidgets(app, &wg, root->children[i], level + 1);
+        xml_addwidgets(path_to_dir, app, &wg, root->children[i], level + 1);
         
         if (cwg->wgtype == CONTAINER_WIDGET){
             u64 uid;
@@ -42,7 +44,7 @@ void xml_addwidgets(
     adjust_rect(cwg);
 }
 
-void init_widget(struct tag *tag, struct Widget **out){
+void init_widget(const char *path_to_dir, struct tag *tag, struct Widget **out){
     if (strcmp(tag->name, "cnt") == 0){
         init_container(tag, out);
     } else if (strcmp(tag->name, "box") == 0){
@@ -50,7 +52,7 @@ void init_widget(struct tag *tag, struct Widget **out){
     } else if (strcmp(tag->name, "text") == 0){
         init_text(tag, out);
     } else if (strcmp(tag->name, "img") == 0){
-        init_img(tag, out);
+        init_img(path_to_dir, tag, out);
     } else {
         fprintf(stderr, "[init_widget][error] widget from tag \"%s\" - unknown widget\n", tag->name);
         exit(-2);
@@ -224,7 +226,7 @@ void init_text(struct tag *tag, struct Widget **out){
     // printf("adding: \"%s\"\n", tag->content);
 }
 
-void init_img(struct tag *tag, struct Widget **out){
+void init_img(const char *path_to_dir, struct tag *tag, struct Widget **out){
     struct Rect rect = {0, 0, -1, -1};
     struct rgb color = {255, 255, 255};
     byte is_dense = 0;
@@ -272,5 +274,14 @@ void init_img(struct tag *tag, struct Widget **out){
         .is_dense = is_dense,
         .img = {0}
     };
-    img_load(path, &(((struct Image*)((*out)->wgdata))->img), 0);
+
+    char *rpath = (char*)calloc(1, strlen(path) + strlen(path_to_dir) + 2); // +1 for '/' bw paths and +1 to '\0'
+    strcat(rpath, path_to_dir);
+    if (rpath[strlen(rpath) - 1] != '/') 
+        strcat(rpath, "/");
+    strcat(rpath, path);
+
+    printf("[log] loading img by this path: %s\n", rpath);
+    img_load(rpath, &(((struct Image*)((*out)->wgdata))->img), 0);
+    free(rpath);
 }

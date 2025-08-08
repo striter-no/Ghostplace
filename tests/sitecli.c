@@ -7,14 +7,6 @@ void *detached(void *args){
     pthread_exit(NULL);
 }
 
-void await_pop(struct queue *q, struct qbuffer *buff){
-    while (1){
-        int has_inp = pop_buffer(q, buff);
-        if (has_inp != 0) continue;
-        break;
-    }
-}
-
 int main(){
     struct TCP_client cli;
     tcp_cli_create(&cli);

@@ -45,11 +45,6 @@ void find_site(
     struct site **out
 );
 
-int compose_site(
-    struct site *site,
-    struct proto_msg **msgs
-);
-
 void compose_enum(
     struct site *site,
     struct proto_msg *msg
@@ -57,7 +52,8 @@ void compose_enum(
 
 int decompose_site(
     struct site *site,
-    struct proto_msg *msgs
+    struct proto_msg *msgs,
+    size_t msgs_size
 );
 
 int get_get_messages(

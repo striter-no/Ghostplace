@@ -30,3 +30,4 @@ void tcp_cli_create(struct TCP_client *cli);
 void tcp_cli_conect(struct TCP_client *cli, const char *ip, int port);
 void tcp_cli_disconn(struct TCP_client *cli);
 void tcp_cli_run(struct TCP_client *cli);
+void await_pop(struct queue *q, struct qbuffer *buff);

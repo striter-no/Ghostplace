@@ -1,72 +1,5 @@
 #include <webnet/site.h>
-
-static void smart_strcat(
-    char **output,
-    char *to_add
-){
-    (*output) = (char*)realloc((*output), strlen((*output)) + strlen(to_add) + 1);
-    strcat((*output), to_add);
-}
-
-static size_t toksplit(const char *src, const char *delim, char ***tokens) {
-    if (src == NULL || delim == NULL || tokens == NULL)
-        return 0;
-
-    *tokens = NULL;
-    
-    char *str_copy = strdup(src);
-    if (str_copy == NULL)
-        return 0;
-    
-    size_t count = 0;
-    char *saveptr;
-    char *token = strtok_r(str_copy, delim, &saveptr);
-    
-    while (token != NULL) {
-        count++;
-        token = strtok_r(NULL, delim, &saveptr);
-    }
-    
-    if (count == 0) {
-        free(str_copy);
-        return 0;
-    }
-    
-    *tokens = malloc(count * sizeof(char *));
-    if (*tokens == NULL) {
-        free(str_copy);
-        return 0;
-    }
-    
-    free(str_copy);
-    str_copy = strdup(src);
-    if (str_copy == NULL) {
-        free(*tokens);
-        *tokens = NULL;
-        return 0;
-    }
-    
-    size_t index = 0;
-    token = strtok_r(str_copy, delim, &saveptr);
-    
-    while (token != NULL) {
-        (*tokens)[index] = strdup(token);
-        if ((*tokens)[index] == NULL) {
-            for (size_t i = 0; i < index; i++)
-                free((*tokens)[i]);
-
-            free(*tokens);
-            *tokens = NULL;
-            free(str_copy);
-            return 0;
-        }
-        index++;
-        token = strtok_r(NULL, delim, &saveptr);
-    }
-    
-    free(str_copy);
-    return count;
-}
+#include <strutils.h>
 
 void save_site(
     struct site *site,
@@ -100,7 +33,7 @@ void save_site(
         fullpath[strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/assets")] = '/';
         fullpath[strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/assets") + 1] = '\0';
         strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/assets"), asset->name);
-        printf("[log] asset path: %s\n", fullpath);
+        // printf("[log] asset path: %s\n", fullpath);
 
         writefile(fullpath, "wb", asset->content, asset->cont_len);
     }
@@ -141,11 +74,11 @@ int load_site(
 
     fullpath[strlen(main_dirpath) + 1 + strlen(site_domain)] = '\0';
     strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain), "/styles.gss");
-    printf("[log] gss path: %s\n", fullpath);
+    // printf("[log] gss path: %s\n", fullpath);
     if (fileexists(fullpath)){
         size_t size;
         readfile(fullpath, "r", (uint8_t**)&gss_content, &size);
-        printf("[log] just read gss\n");
+        // printf("[log] just read gss\n");
     }
 
     fullpath[strlen(main_dirpath) + 1 + strlen(site_domain)] = '\0';
@@ -168,7 +101,7 @@ int load_site(
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets")] = '/';
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets") + 1] = '\0';
         strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets"), file_names[i]);
-        printf("[log] asset path: %s\n", fullpath);
+        // printf("[log] asset path: %s\n", fullpath);
         readfile(fullpath, "rb", &assets[i].content, &assets[i].cont_len);
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets")] = '\0';
     }
@@ -222,158 +155,64 @@ void find_site(
     *out = NULL;
 }
 
-/*
-GET text 0
-domain ...
-4
-
-GET text 0
-domain ...
-{index.ghml}
-
-GET text 0
-domain ...
-{styles.gss}
-
-GET img 0
-domain ...
-{asset1.png}
-
-GET img 0
-domain ...
-{asset2.png}
-*/
-int compose_site(
-    struct site *site,
-    struct proto_msg **msgs
-){
-    size_t msgs_num = 2 + site->has_gss + site->assets_n;
-    
-    size_t counter = 0;
-    (*msgs) = (struct proto_msg*)calloc(msgs_num, sizeof(struct proto_msg));
-    (*msgs)[counter++] = (struct proto_msg){
-        .type = GET,
-        .conttype = TEXT_CONT,
-        .path = strdup(site->domain_name),
-        .proto_ver = 0,
-        .content = NULL,
-        .cont_size = 0
-    };
-    char files_buff[20];
-    sprintf(files_buff, "%d %d", msgs_num - 1, site->has_gss);
-    set_proto_content(&(*msgs)[counter - 1], (uint8_t*)files_buff, strlen(files_buff) + 1);
-
-    (*msgs)[counter++] = (struct proto_msg){
-        .type = GET,
-        .conttype = TEXT_CONT,
-        .path = strdup(site->domain_name),
-        .proto_ver = 0,
-        .content = NULL,
-        .cont_size = 0
-    };
-    set_proto_content(&(*msgs)[counter - 1], site->ghml_content, strlen(site->ghml_content) + 1);
-
-    if (site->has_gss){
-        (*msgs)[counter++] = (struct proto_msg){
-            .type = GET,
-            .conttype = TEXT_CONT,
-            .path = strdup(site->domain_name),
-            .proto_ver = 0,
-            .content = NULL,
-            .cont_size = 0
-        };
-        set_proto_content(&(*msgs)[counter - 1], site->gss_content, strlen(site->gss_content) + 1);
-    }
-
-    for (size_t i = 0; i < site->assets_n; i++){
-        struct site_asset *asset = &site->assets[i];
-        if (asset->type == IMAGE_CONT){
-
-            char *local_domain = strdup(site->domain_name);
-            if (local_domain[strlen(local_domain)-1] != '/') {
-                // Добавляем слэш к домену один раз при инициализации
-                char *temp = malloc(strlen(local_domain) + 2);
-                if (temp) {
-                    strcpy(temp, local_domain);
-                    strcat(temp, "/");
-                    free(local_domain);
-                    local_domain = temp;
-                }
-            }
-
-            char *asset_path = (char*)calloc(strlen(local_domain) + strlen(asset->name) + 1, sizeof(char)); // +1 for '\0'
-            strcat(asset_path, local_domain);
-            strcat(asset_path, asset->name);
-            
-            free(local_domain);
-            (*msgs)[counter++] = (struct proto_msg){
-                .type = GET,
-                .conttype = IMAGE_CONT,
-                .path = asset_path,
-                .proto_ver = 0,
-                .content = NULL,
-                .cont_size = 0
-            };
-        } else {
-            for (size_t j = 0; j < counter; j++) {
-                proto_msg_free(&(*msgs)[j]);
-            }
-            free(*msgs);
-            *msgs = NULL;
-
-            fprintf(stderr, "[site][compose][error] now I cannot process this type of asset\n");
-            return -1;
-        }
-        set_proto_content(&(*msgs)[counter - 1], asset->content, asset->cont_len);
-    }
-
-    return 0;
-}
-
 int decompose_site(
     struct site *site,
-    struct proto_msg *msgs
+    struct proto_msg *msgs,
+    size_t msgs_size
 ){
-    *site = (struct site){0};
-    
-    site->domain_name = strdup(msgs[0].path);
-    
-    size_t msgs_size = 0, has_gss = 0;
-    sscanf(msgs[0].content, "%d %d", &msgs_size, &has_gss);
+    char was_ghml = 0;
+    char was_gss = 0;
+    int  num_assets = 0;
+    struct site_asset *assets = NULL;
 
-    site->ghml_content = (char*)malloc(msgs[1].cont_size);
-    memcpy(site->ghml_content, msgs[1].content, msgs[1].cont_size);
-
-    site->has_gss = has_gss;
-    if (has_gss){
-        site->gss_content = (char*)malloc(msgs[2].cont_size);
-        memcpy(site->gss_content, msgs[2].content, msgs[2].cont_size);
-    }
-
-    // assets
-    site->assets_n = msgs_size - (1 + has_gss);
-    site->assets = (struct site_asset*)malloc(site->assets_n * sizeof(struct site_asset));
-    for (size_t i = 0; i < site->assets_n; i++){
-        struct site_asset *asset = &site->assets[i];
-        struct proto_msg *msg = &msgs[2 + has_gss + i];
-
-        asset->cont_len = msg->cont_size;
-        asset->content = (uint8_t*)malloc(msg->cont_size);
-        memcpy(asset->content, msg->content, asset->cont_len);
-
-        char **tokens = NULL;
-        size_t ntoks = toksplit(msg->path, "/", &tokens);
+    for (size_t i = 0; i < msgs_size; i++){
+        struct proto_msg *msg = &msgs[i];
+        char *path = NULL;
         
-        if (ntoks < 2){
-            free_list_cstr(tokens, ntoks);
-            return -1;
+        if (msg->path[0] == '/'){
+            path = malloc(strlen(msg->path));
+            strcpy(path, msg->path + 1);
+
+            free(msg->path);
+            msg->path = path;
         }
 
-        asset->name = strdup(tokens[1]);
-        asset->type = msg->conttype;
+        printf("[log][decompose] path: \"%s\"\n", msg->path);
 
-        free_list_cstr(tokens, ntoks);
+        if (strcmp(msg->path, "index.ghml") == 0){
+            site->ghml_content = strdup(msg->content);
+            was_ghml = 1;
+            continue;
+        }
+
+        if (strcmp(msg->path, "styles.gss") == 0){
+            site->gss_content = strdup(msg->content);
+            was_gss = 1;
+            continue;
+        }
+
+        if (str_startsw(msg->path, "assets/")){
+            assets = (struct site_asset *)realloc(assets, sizeof(struct site_asset) * (++num_assets));
+            struct site_asset *asset = &assets[num_assets - 1];
+            
+            asset->cont_len = msg->cont_size;
+            asset->type = msg->conttype;
+            asset->name = basepath(msg->path);
+            asset->content = (uint8_t *)malloc(msg->cont_size);
+            memcpy(asset->content, msg->content, msg->cont_size);
+        }
     }
+
+    if (!was_ghml){
+        if (assets) 
+            free(assets);
+        return -1;
+    }
+
+    site->assets = assets;
+    site->assets_n = num_assets;
+    site->has_gss = was_gss;
+    site->domain_name = strdup("undef");
 
     return 0;
 }

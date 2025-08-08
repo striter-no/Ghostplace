@@ -32,7 +32,12 @@
         "queue.h": "c",
         "netdb.h": "c",
         "cstdlib": "cpp",
-        "cstdint": "c"
+        "cstdint": "c",
+        "strings.h": "c",
+        "stddef.h": "c",
+        "strutils.h": "c",
+        "site.h": "c",
+        "tcpcli.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/clang-18"
 }

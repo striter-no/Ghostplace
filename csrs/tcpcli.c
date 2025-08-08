@@ -156,3 +156,11 @@ void tcp_cli_run(struct TCP_client *cli){
 
     cli->running = 0;
 }
+
+void await_pop(struct queue *q, struct qbuffer *buff){
+    while (1){
+        int has_inp = pop_buffer(q, buff);
+        if (has_inp != 0) continue;
+        break;
+    }
+}

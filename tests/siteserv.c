@@ -10,14 +10,6 @@ void *detached(void *args){
 int main(){
     struct site site;
     load_site(&site, "./assets/sites", "ghost.main");
-    
-    // 2. Composing site to protocol messages
-    // struct proto_msg *msgs = NULL;
-    // compose_site(&site, &msgs);
-    
-
-    // size_t msgs_size = 0, has_gss = 0;
-    // sscanf(msgs[0].content, "%d %d", &msgs_size, &has_gss);
 
     struct TCP_server serv;
     tcp_create(&serv, "127.0.0.1", 8520);
@@ -72,8 +64,4 @@ int main(){
 
     pthread_join(main_thread, NULL);
     destroy_site(&site);
-    // for (size_t i = 0; i < msgs_size + 1; i++){
-    //     proto_msg_free(&msgs[i]);
-    // }
-    // free(msgs);
 }

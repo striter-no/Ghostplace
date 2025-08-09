@@ -55,7 +55,7 @@ static int __read_polling(int sockfd){
     
     // Проверяем тип события
     if (pfd.revents & (POLLHUP | POLLERR)) {
-        printf("[log] server down (POLLHUP/POLLERR)\n");
+        // **printf("[log] server down (POLLHUP/POLLERR)\n");
         return -2;
     }
     
@@ -86,10 +86,10 @@ void tcp_cli_run(struct TCP_client *cli){
 
             bzero(inp_buffer, TCP_MAX_BUFFER);
 
-            printf("[log] reading...\n");
+            // **printf("[log] reading...\n");
             got_bytes = read(cli->sockfd, inp_buffer, sizeof(inp_buffer));
             if (got_bytes == 0){
-                printf("[log] server disconnected\n");
+                // **printf("[log] server disconnected\n");
                 local_running = 0;
                 goto __thr_exit;
                 break;
@@ -119,7 +119,7 @@ void tcp_cli_run(struct TCP_client *cli){
         }
 
         // inp_buffer[got_bytes] = '\0';
-        printf("[log] got %d bytes\n", buff_size);
+        // **printf("[log] got %d bytes\n", buff_size);
 
         struct qbuffer ibuf;
         create_qbuffer(&ibuf, buff_size + 1);

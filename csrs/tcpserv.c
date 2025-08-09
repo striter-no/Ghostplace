@@ -28,7 +28,7 @@ static int __read_polling(int sockfd){
     
     // Проверяем тип события
     if (pfd.revents & (POLLHUP | POLLERR)) {
-        printf("[log] client down (POLLHUP/POLLERR)\n");
+        // **printf("[log] client down (POLLHUP/POLLERR)\n");
         return -2;
     }
     
@@ -60,10 +60,10 @@ void *__TCP_serv_cli_thread(void *voidargs){
 
             bzero(inp_buffer, TCP_MAX_BUFFER);
 
-            printf("[log] reading...\n");
+            // **printf("[log] reading...\n");
             got_bytes = read(cli->connfd, inp_buffer, sizeof(inp_buffer));
             if (got_bytes == 0){
-                printf("[log] client disconnected\n");
+                // **printf("[log] client disconnected\n");
                 local_running = 0;
                 goto __thr_exit;
                 break;
@@ -94,7 +94,7 @@ void *__TCP_serv_cli_thread(void *voidargs){
         }
 
         // inp_buffer[got_bytes] = '\0';
-        // printf("[log] got this bytes: %s\n", inp_buffer);
+        // !*printf("[log] got this bytes: %s\n", inp_buffer);
 
         struct qbuffer ibuf;
         create_qbuffer(&ibuf, buff_size + 1);
@@ -130,7 +130,7 @@ void *__TCP_serv_cli_thread(void *voidargs){
     }
 
     __sync_fetch_and_sub(args->act_clients, 1);
-    printf("[log] active clients: %d\n", *args->act_clients);
+    // **printf("[log] active clients: %d\n", *args->act_clients);
     
     free(args);
     pthread_exit(NULL);
@@ -194,7 +194,7 @@ void tcp_loop(struct TCP_server *serv){
         struct __TCP_serv_cli newcli;
         unsigned int len = sizeof(newcli.sock);
         newcli.connfd = accept(serv->sockfd, (struct sockaddr*)&newcli.sock, &len);
-        printf("[log] accepted new client\n");
+        // **printf("[log] accepted new client\n");
 
         if (newcli.connfd < 0){
             fprintf(stderr, "[warning][tcp_serv][loop] acception failed\n");

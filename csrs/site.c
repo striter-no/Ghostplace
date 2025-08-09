@@ -33,7 +33,7 @@ void save_site(
         fullpath[strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/assets")] = '/';
         fullpath[strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/assets") + 1] = '\0';
         strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/assets"), asset->name);
-        // printf("[log] asset path: %s\n", fullpath);
+        // !*printf("[log] asset path: %s\n", fullpath);
 
         writefile(fullpath, "wb", asset->content, asset->cont_len);
     }
@@ -74,11 +74,11 @@ int load_site(
 
     fullpath[strlen(main_dirpath) + 1 + strlen(site_domain)] = '\0';
     strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain), "/styles.gss");
-    // printf("[log] gss path: %s\n", fullpath);
+    // !*printf("[log] gss path: %s\n", fullpath);
     if (fileexists(fullpath)){
         size_t size;
         readfile(fullpath, "r", (uint8_t**)&gss_content, &size);
-        // printf("[log] just read gss\n");
+        // !*printf("[log] just read gss\n");
     }
 
     fullpath[strlen(main_dirpath) + 1 + strlen(site_domain)] = '\0';
@@ -101,7 +101,7 @@ int load_site(
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets")] = '/';
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets") + 1] = '\0';
         strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets"), file_names[i]);
-        // printf("[log] asset path: %s\n", fullpath);
+        // !*printf("[log] asset path: %s\n", fullpath);
         readfile(fullpath, "rb", &assets[i].content, &assets[i].cont_len);
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets")] = '\0';
     }
@@ -177,7 +177,7 @@ int decompose_site(
             msg->path = path;
         }
 
-        printf("[log][decompose] path: \"%s\"\n", msg->path);
+        // **printf("[log][decompose] path: \"%s\"\n", msg->path);
 
         if (strcmp(msg->path, "index.ghml") == 0){
             site->ghml_content = strdup(msg->content);

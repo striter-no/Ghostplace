@@ -30,7 +30,7 @@ int main(){
         int has_inp = pop_buffer(&cli.input_queue, &ibuff);
         if (has_inp != 0) continue;
 
-        printf("[out] buffer: %s\n", ibuff.bytes);
+        // **printf("[out] buffer: %s\n", ibuff.bytes);
         copy_qbuffer(&obuff, &ibuff);
         push_buffer(&cli.output_queue, &obuff);
 

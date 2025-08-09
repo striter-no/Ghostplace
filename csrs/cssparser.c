@@ -1,7 +1,7 @@
 #include <web/cssparser.h>
 
 void __get_widgets(struct Widget *main_cnt, struct Widget ***widgets, u64 *widgets_sz){
-    // printf("[__get_widgets][log] iter... %llu\n", main_cnt->wgtype);
+    // !*printf("[__get_widgets][log] iter... %llu\n", main_cnt->wgtype);
 
     struct Container *cnt = main_cnt->wgdata;
     u64 old_size = *widgets_sz;
@@ -69,7 +69,7 @@ void css_parsewidgets(
 
     for (u64 i = 0; blocks[i].name != NULL; i++){
         struct css_block *curr = &blocks[i];
-        // printf("[css] block: %s\n", curr->name);
+        // !*printf("[css] block: %s\n", curr->name);
 
         enum RELP_ENUM relp[2] = {M_RELP_UNDEFINED, M_RELP_UNDEFINED};
         f32 relp_v[2] = {-1, -1};
@@ -84,7 +84,7 @@ void css_parsewidgets(
 
         for (u64 k = 0; k < curr->attrs_used; k++){
             struct attribute *attr = &curr->attrs[k];
-            // printf("[css] attr: %s = %s\n", attr->name, attr->value);
+            // !*printf("[css] attr: %s = %s\n", attr->name, attr->value);
             if (strcmp(attr->name, "h.absolute") == 0){
                 h_absolute = atoi(attr->value);
                 has_habs = 1;
@@ -169,17 +169,17 @@ void css_parsewidgets(
                 continue;
             }
             
-            // printf("[css] block %s passed\n", curr->name);            
+            // !*printf("[css] block %s passed\n", curr->name);            
 
             for (int _i = 0; _i < 2; _i++){
-                // printf("[css][2log] %d\n", _i);
+                // !*printf("[css][2log] %d\n", _i);
                 if (relp[_i] != M_RELP_UNDEFINED){
                     struct WidgetRelp *prelp;
                     __get_relp(*main_cnt, (*wg)->uid, &prelp);
 
                     // Проверяем, указывает ли prelp на освобожденную память
                     if (prelp == NULL){
-                        fprintf(stderr, "[warning][css_parse][failure] widget with UID %llu was not found\n", (*wg)->uid);
+                        // printf("[warning][css_parse][failure] widget with UID %llu was not found\n", (*wg)->uid);
                         continue;
                     }
 
@@ -188,7 +188,7 @@ void css_parsewidgets(
                     prelp->has_habs = has_habs;
                     prelp->has_vabs = has_vabs;
                     prelp->is_fixed = fixed;
-                    // printf("[css][log] setting %d to relp: ", relp_v[_i]);
+                    // !*printf("[css][log] setting %d to relp: ", relp_v[_i]);
                     switch (relp[_i]){
                         case M_RIGHT:
                             // printf("right\n");
@@ -232,7 +232,7 @@ void css_parsewidgets(
             
             switch ((*wg)->wgtype){
                 case TEXT_WIDGET: {
-                    // printf("[css][log] text widget\n");
+                    // !*printf("[css][log] text widget\n");
                     struct Text* raw = (struct Text*)((*wg)->wgdata);
                     if (color.r != -1) raw->base_clr.r = color.r;
                     if (color.g != -1) raw->base_clr.g = color.g;
@@ -241,7 +241,7 @@ void css_parsewidgets(
                     break;
                 }
                 case IMAGE_WIDGET: {
-                    // printf("[css][log] image widget\n");
+                    // !*printf("[css][log] image widget\n");
                     struct Image* raw = (struct Image*)((*wg)->wgdata);
                     if (color.r != -1) raw->base_clr.r = color.r;
                     if (color.g != -1) raw->base_clr.g = color.g;
@@ -249,7 +249,7 @@ void css_parsewidgets(
                     break;
                 }
                 case BOX_WIDGET: {
-                    // printf("[css][log] box widget\n");
+                    // !*printf("[css][log] box widget\n");
                     struct Box* raw = (struct Box*)((*wg)->wgdata);
                     if (color.r != -1) raw->color.r = color.r;
                     if (color.g != -1) raw->color.g = color.g;

@@ -8,7 +8,7 @@ void xml_addwidgets(
     struct tag *root,
     int level
 ){    
-    // printf("[log] adding tag %s\n", root->name);
+    // !*printf("[log] adding tag %s\n", root->name);
     if (level == 0 && strcmp(root->name, "cnt") != 0){
         fprintf(stderr, "First tag has to be \"cnt\", not a \"%s\"\n", root->name);
         exit(-1);
@@ -281,7 +281,7 @@ void init_img(const char *path_to_dir, struct tag *tag, struct Widget **out){
         strcat(rpath, "/");
     strcat(rpath, path);
 
-    printf("[log] loading img by this path: %s\n", rpath);
+    // **printf("[log] loading img by this path: %s\n", rpath);
     img_load(rpath, &(((struct Image*)((*out)->wgdata))->img), 0);
     free(rpath);
 }

@@ -27,10 +27,11 @@ void create_router(
     const char *store_dir,
 
     const char *bind_ip,
-    int port
+    int port, 
+    size_t cli_max
 ){
     tcp_create(&router->server, bind_ip, port);
-    tcp_listen(&router->server, 10);
+    tcp_listen(&router->server, cli_max);
     router->sites = NULL;
     router->sites_num = 0;
     router->store_dir = strdup(store_dir);
@@ -63,7 +64,7 @@ void run_router(struct router *router, void (*router_calllback)(struct qbuffer *
             int has_inp = pop_buffer(&cli->input_queue, &ibuff);
             if (has_inp != 0) continue;
 
-            // printf("[log] buffer: %s\n", ibuff.bytes);
+            // !*printf("[log] buffer: %s\n", ibuff.bytes);
             router_calllback(&ibuff, &obuff);
             push_buffer(&cli->output_queue, &obuff);
 

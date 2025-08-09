@@ -87,7 +87,7 @@ void proto_serial(
 
     create_qbuffer(buff, all_sizes + ucont_size);
     char *header = (char*)malloc(all_sizes + 1);
-    printf("[debug] all size: %d\n", all_sizes);
+    // **printf("[debug] all size: %d\n", all_sizes);
     sprintf(header, "%d %d %d %s %d\n", umsg_type, ucont_type, uproto_ver, inp->path, ucont_size);
     
     memcpy(buff->bytes, header, all_sizes);

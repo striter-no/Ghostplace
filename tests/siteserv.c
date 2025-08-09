@@ -35,13 +35,13 @@ int main(){
 
             if (inp_msg.type != GET) continue;
             if (strcmp(inp_msg.path, "/") == 0){
-                printf("[log] enum requested\n");
+                // **printf("[log] enum requested\n");
                 struct proto_msg out;
                 compose_enum(&site, &out);
                 proto_serial(&out, &obuff);
                 proto_msg_free(&out);
             } else {
-                printf("[log] path requested: %s\n", inp_msg.path);
+                // **printf("[log] path requested: %s\n", inp_msg.path);
                 struct proto_msg out;
                 compose_by_path(&site, inp_msg.path, &out);
                 proto_print(&out);

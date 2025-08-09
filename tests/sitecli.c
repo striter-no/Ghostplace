@@ -36,7 +36,7 @@ int main(){
 
     sleep(2);
     if (cli.running){
-        printf("[log] awaiting for messages\n");
+        // **printf("[log] awaiting for messages\n");
         struct qbuffer ibuff;
         await_pop(&cli.input_queue, &ibuff);
 
@@ -50,7 +50,7 @@ int main(){
         int out = get_get_messages(&enum_msg, &get_msgs, &msgs_size);
         proto_msg_free(&enum_msg);
 
-        printf("[log]{%d} requesting %d messages\n", out, msgs_size);
+        // **printf("[log]{%d} requesting %d messages\n", out, msgs_size);
         for (size_t i = 0; i < msgs_size; i++){
             struct qbuffer obuff;
             proto_serial(&get_msgs[i], &obuff);
@@ -59,7 +59,7 @@ int main(){
 
             struct qbuffer ibuff;
             await_pop(&cli.input_queue, &ibuff);
-            printf("[log] got %d message\n", i + 1);
+            // **printf("[log] got %d message\n", i + 1);
             
             msgs = (struct proto_msg*)realloc(msgs, sizeof(struct proto_msg) * (++got_msgs));
             proto_deserial(&msgs[i], &ibuff);
@@ -73,7 +73,7 @@ int main(){
     }
     tcp_cli_disconn(&cli);
 
-    printf("[log] all got\n");
+    // **printf("[log] all got\n");
 
     pthread_join(main_thread, NULL);
     clear_qbuffer(&qmsg);

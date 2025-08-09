@@ -20,7 +20,8 @@ void create_router(
     const char *store_dir,
 
     const char *bind_ip,
-    int port
+    int port, 
+    size_t cli_max
 );
 
 void destroy_router(struct router *router);

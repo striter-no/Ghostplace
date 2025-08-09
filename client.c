@@ -12,24 +12,20 @@ struct Widget *main_cnt = NULL;
 static struct Keyboard kb;
 static struct Mouse mouse;
 
+const char router_ip[] = "127.0.0.1";
+int        router_port = 8520;
 
 void *detached(void *args);
 void update(struct tgr_app *app);
 int update_to_site(struct tgr_app *app, const char *domain_name);
 
 int main(){
-    // INIT VARIABLES
-
-    // const char router_ip[] = "127.0.0.1";
-    // int        router_port = 8520;
-
-
     // TUI INIT
 
     struct tgr_app app;
     tgr_init(&app);
     app.background_clr = (struct rgb){28, 28, 28};
-    app.FORCE_FPS = 60;
+    // app.FORCE_FPS = 60;
 
     mouse = (struct Mouse){0};
     create_kboard(&kb);
@@ -56,7 +52,7 @@ int update_to_site(struct tgr_app *app, const char *domain_name){
 
     // TCP INIT
     tcp_cli_create(&tcpcli);
-    tcp_cli_conect(&tcpcli, "127.0.0.1", 8520);
+    tcp_cli_conect(&tcpcli, router_ip, router_port);
     
     pthread_t main_thread;
     pthread_create(&main_thread, NULL, detached, (void*)&tcpcli);
@@ -69,7 +65,7 @@ int update_to_site(struct tgr_app *app, const char *domain_name){
     request_site(&site, &tcpcli, domain_name);
     char tmp_site_name[100] = {0};
     sprintf(tmp_site_name, ".tmp_sites/%s", domain_name);
-    printf("[log] tmp site name: %s\n", tmp_site_name);
+    // **printf("[log] tmp site name: %s\n", tmp_site_name);
 
     save_site(&site, ".tmp_sites");
 

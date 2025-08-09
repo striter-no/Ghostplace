@@ -2,8 +2,8 @@
 
 # clone utf8proc
 wget https://github.com/JuliaStrings/utf8proc/releases/download/v2.10.0/utf8proc-2.10.0.tar.gz
-tar -xf ./utf8proc*.tar
-rm -f ./utf8proc*.tar
+tar -xf ./utf8proc-2.10.0.tar.gz
+rm -f ./utf8proc-2.10.0.tar.gz
 
 # build utf8proc
 cd ./utf8proc*
@@ -14,4 +14,5 @@ make install
 cd ..
 ./scripts/rbuild router "$1"
 
+mkdir -p bin
 echo "Done"

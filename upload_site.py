@@ -28,7 +28,7 @@ def unpack_tar(archive_path, extract_to):
         tar.extractall(path=extract_to)
 
 @app.route('/upload', methods=['POST'])
-async def upload_archive():
+def upload_archive():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
 
@@ -43,15 +43,17 @@ async def upload_archive():
         target_dir = UPLOAD_FOLDER
         target_dir.mkdir(exist_ok=True)
 
+        allow = input(f"[WARNING]\nIncoming site from {request.remote_addr} (named: {archive_name[:100]})\nallow to host? [Y/n]") or "Y"
+        if (allow != "Y"):
+            return "denied", 403
+
         # Сохраняем архив во временный файл
         temp_path = target_dir / filename
-        await asyncio.to_thread(file.save, temp_path)  # асинхронное сохранение
+        file.save(temp_path)  # асинхронное сохранение
 
         # Распаковка в отдельном потоке
         try:
-            await asyncio.get_event_loop().run_in_executor(
-                None,
-                unpack_tar,
+            unpack_tar(
                 temp_path,
                 target_dir
             )

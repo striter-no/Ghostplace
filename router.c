@@ -96,14 +96,30 @@ void *update_db_thread(void *args){
     pthread_exit(NULL);
 }
 
-int main(){
+int main(int argc, char *argv[]){
+    if (argc < 3){
+        fprintf(stderr, "[error] usage: %s ip port\n", argv[0]);
+        exit(-1);
+    }
+
+    if (strlen(argv[1]) >= 20){
+        fprintf(stderr, "[error] argv[1] (ip) is more than 19 simbols");
+        fprintf(stderr, "[error] usage: %s ip port\n", argv[0]);
+        exit(-1);
+    }
+
+    if (atoi(argv[2]) == 0){
+        fprintf(stderr, "[error] argv[2] (port) can not be equal to zero (or be non-digital)");
+        fprintf(stderr, "[error] usage: %s ip port\n", argv[0]);
+        exit(-1);
+    }
     struct router router;
 
     create_router(
         &router,
         "./assets/sites",
-        "192.168.31.100",
-        9000,
+        argv[1],
+        atoi(argv[2]),
         20
     );
     

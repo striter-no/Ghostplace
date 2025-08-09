@@ -6,7 +6,8 @@
 void create_cont(
     struct Container *cont,
     enum WG_CONTAINER_POS storing,
-    byte scroll
+    byte scroll,
+    int border
 ){
     cont->widgets = create_table(sizeof(u64), sizeof(struct ExtCWidget));
     cont->storing_wgc = storing;
@@ -14,6 +15,9 @@ void create_cont(
     cont->int_xofs = 0;
     cont->int_yofs = 0;
     cont->scrollable = scroll;
+    cont->border_mode = border;
+    cont->border_clr = (struct rgb){255, 255, 255};
+    cont->border_type = BOX_ONE_LINE;
 }
 
 void free_container(
@@ -83,7 +87,10 @@ void container_cpy(
     dst->int_yofs = src->int_yofs;
     dst->scrollable = src->scrollable;
     dst->widgets = create_table(src->widgets.key_size, src->widgets.value_size);
-    
+    dst->border_mode = src->border_mode;
+    dst->border_clr = src->border_clr;
+    dst->border_type = src->border_type;
+
     struct Table *tbd = &dst->widgets;
     struct Table *tb =  &src->widgets;
     for (u64 i = 0; i < tb->size; i++){
@@ -134,7 +141,9 @@ void upd_container_focus(struct tgr_app *app, struct Widget *cont_wg, struct Mou
                 
                 struct Rect cpy = wg->widget.rect;
                 struct Rect *rwg = &wg->widget.rect;
-                *rwg = snap_rect(cont_wg->rect, *rwg, wg->widget.orig_state, wg->positioning, wg->widget.wgtype, cont->storing_wgc, &offset_x, &offset_y);
+                
+                char is_bordered = (wg->widget.wgtype == CONTAINER_WIDGET) && (((struct Container*)wg->widget.wgdata)->border_mode != 0);
+                *rwg = snap_rect(is_bordered, cont_wg->rect, *rwg, wg->widget.orig_state, wg->positioning, wg->widget.wgtype, cont->storing_wgc, &offset_x, &offset_y);
                 rwg->x += cont->int_xofs;
                 rwg->y += cont->int_yofs;
 
@@ -194,7 +203,9 @@ void update_positions(struct Widget *widget) {
         
         struct Rect orig_rect = child->widget.rect;
         
+        char is_bordered = (child->widget.wgtype == CONTAINER_WIDGET) && (((struct Container*)child->widget.wgdata)->border_mode != 0);
         child->widget.rect = snap_rect(
+            is_bordered,
             widget->rect,
             child->widget.rect,
             child->widget.orig_state,
@@ -285,6 +296,8 @@ void rem_widget(
 }
 
 struct Rect snap_rect(
+    char is_bordered,
+
     struct Rect parrent, 
     struct Rect widget,
     struct Rect og_rect,
@@ -333,7 +346,7 @@ struct Rect snap_rect(
 
     if ((!relp.has_vabs && parrelp == CWG_VERTICLLY) || 
         (!relp.has_habs && parrelp != CWG_VERTICLLY))
-        (*offy) += wh;
+        (*offy) += wh + is_bordered;
 
     widget.x += loffset_x + (relp.has_habs ? relp.v_absolute: 0);
     widget.y += loffset_y + (relp.has_vabs ? relp.h_absolute: 0);
@@ -341,6 +354,27 @@ struct Rect snap_rect(
 }
 
 void draw_container(struct tgr_app *app, const struct Container *cont, struct Rect rect) {
+    if (cont->border_mode == 1){ // in
+        struct Box box = {
+            .color = cont->border_clr,
+            .type  = cont->border_type,
+            .srect = rect
+        };
+        draw_box(app, &box, box.srect);
+    } else if (cont->border_mode == 2){ // out
+        struct Box box = {
+            .color = cont->border_clr,
+            .type  = cont->border_type,
+            .srect = (struct Rect){
+                rect.x - 1,
+                rect.y - 1,
+                rect.w + 2,
+                rect.h + 2
+            }
+        };
+        draw_box(app, &box, box.srect);
+    } 
+
     struct Table *tb = &cont->widgets;
     for (u64 i = 0; i < tb->size; i++) {
         struct ExtCWidget *wg;
@@ -435,7 +469,7 @@ void adjust_rect(
                         }
                         x++;
                     }
-                    rect.h = y + 2;
+                    rect.h = y + 1;
                 }
                 break;
             }
@@ -450,7 +484,9 @@ void adjust_rect(
                     table_at(tb, (ubyte*)tb->keys + i * tb->key_size, &wg);
 
                     struct Rect rwg = wg.widget.rect;
-                    rwg = snap_rect(rect, rwg, wg.widget.orig_state, wg.positioning, wg.widget.wgtype, cnt->storing_wgc, &offset_x, &offset_y);
+                    
+                    char is_bordered = (wg.widget.wgtype == CONTAINER_WIDGET) && (((struct Container*)wg.widget.wgdata)->border_mode != 0);
+                    rwg = snap_rect(is_bordered, rect, rwg, wg.widget.orig_state, wg.positioning, wg.widget.wgtype, cnt->storing_wgc, &offset_x, &offset_y);
 
                     mx_width = max(mx_width, rwg.x + rwg.w);
                     mx_height = max(mx_height, rwg.y + rwg.h);

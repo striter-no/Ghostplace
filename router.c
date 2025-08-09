@@ -1,7 +1,7 @@
 #include <webnet/router.h>
 #include <strutils.h>
 
-#define UPD_SECONDS_DELAY 10
+#define UPD_SECONDS_DELAY 60 * 60
 
 pthread_mutex_t sites_db_mtx = PTHREAD_MUTEX_INITIALIZER;
 
@@ -13,12 +13,40 @@ void callback(
     struct qbuffer *out
 ){
     struct proto_msg inp_msg, out_msg;
-    proto_deserial(&inp_msg, inp);
+    int status = proto_deserial(&inp_msg, inp);
+    if (status < 1){
+        printf("[warning][callback] deserial failure\n");
+        out_msg = (struct proto_msg){
+            .type = GET,
+            .path = strdup("/"),
+            .content = strdup("proto-err"),
+            .cont_size = strlen("proto-err") + 1,
+            .conttype = TEXT_CONT,
+            .proto_ver = 0
+        };
+
+        proto_serial(&out_msg, out);
+        proto_msg_free(&out_msg);
+        
+        return;
+    }
 
     char **tokens = NULL;
     size_t ntoks = toksplit(inp_msg.path, "/", &tokens);
     if (ntoks == 0){
-        // **printf("[warning][callback] ntoks == 0\n");
+        printf("[warning][callback] ntoks == 0\n");
+        out_msg = (struct proto_msg){
+            .type = GET,
+            .path = strdup("/"),
+            .content = strdup("proto-err"),
+            .cont_size = strlen("proto-err") + 1,
+            .conttype = TEXT_CONT,
+            .proto_ver = 0
+        };
+
+        proto_serial(&out_msg, out);
+        proto_msg_free(&out_msg);
+        
         return;
     }
 
@@ -49,31 +77,39 @@ void callback(
 
 void *update_db_thread(void *args){
     struct router *router = (struct router*)args;
-    
+    while (!router->server.running){
+        sleep(1);
+    } // busylooping
+
+    printf("[log] starting to updating sites (from \"%s\" dir)\n", router->store_dir);
     while (router->server.running){
         pthread_mutex_lock(&sites_db_mtx);
+        printf("[log] updating sites from %zu active...\n", sites_num);
         load_sites_db(&sites_db, &sites_num, router->store_dir);
+        printf("[log] updated sites DB, %zu sites active\n", sites_num);
         pthread_mutex_unlock(&sites_db_mtx);
 
         sleep(UPD_SECONDS_DELAY);
     }
+    printf("[log] stopped updating sites\n");
 
     pthread_exit(NULL);
 }
 
 int main(){
     struct router router;
-    
-    pthread_t upd_thr;
-    pthread_create(&upd_thr, NULL, update_db_thread, (void*)&router);
 
     create_router(
         &router,
         "./assets/sites",
-        "127.0.0.1",
-        8520,
+        "192.168.31.100",
+        9000,
         20
     );
+    
+    pthread_t upd_thr;
+    pthread_create(&upd_thr, NULL, update_db_thread, (void*)&router);
+    pthread_detach(upd_thr);
     
     run_router(&router, callback);
 
@@ -84,6 +120,6 @@ int main(){
     free(sites_db);
     destroy_router(&router);
 
-    pthread_join(upd_thr, NULL);
+    
     pthread_mutex_destroy(&sites_db_mtx);
 }

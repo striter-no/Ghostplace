@@ -76,6 +76,10 @@ void css_parsewidgets(
 
         enum BOX_TYPE box_style = BOX_TYPE_UNDEFINED;
         struct rgb color = {-1, -1, -1}; 
+
+        enum BOX_TYPE border_style = BOX_TYPE_UNDEFINED;
+        struct rgb border_color = {-1, -1, -1}; 
+
         int txt_style = -1;
 
         i16 h_absolute = -1, v_absolute = -1;
@@ -112,12 +116,17 @@ void css_parsewidgets(
                 relp[1] = M_VCENTER;
                 relp_v[1] = atof(attr->value);
             } else if (strcmp(attr->name, "clr.r") == 0){
-                // printf("color is set\n");
                 color.r = atoi(attr->value);
             } else if (strcmp(attr->name, "clr.g") == 0){
                 color.g = atoi(attr->value);
             } else if (strcmp(attr->name, "clr.b") == 0){
                 color.b = atoi(attr->value);
+            } else if (strcmp(attr->name, "brd.clr.r") == 0){
+                border_color.r = atoi(attr->value);
+            } else if (strcmp(attr->name, "brd.clr.g") == 0){
+                border_color.g = atoi(attr->value);
+            } else if (strcmp(attr->name, "brd.clr.b") == 0){
+                border_color.b = atoi(attr->value);
             } else if (strcmp(attr->name, "txt.style") == 0){
                 if (strcmp(attr->value, "bold") == 0)
                     txt_style = STYLE_BOLD;
@@ -150,6 +159,19 @@ void css_parsewidgets(
                     box_style = BOX_PRIMITIVE;
                 } else {
                     fprintf(stderr, "[css_parse][error] box type \"%s\" is unknown\n", attr->value);
+                    exit(-13);
+                }
+            } else if (strcmp(attr->name, "brd.style") == 0){
+                if (strcmp(attr->value, "one") == 0){
+                    border_style = BOX_ONE_LINE;
+                } else if (strcmp(attr->value, "double") == 0){
+                    border_style = BOX_DOUBLE;
+                } else if (strcmp(attr->value, "round") == 0){
+                    border_style = BOX_ROUNDED;
+                } else if(strcmp(attr->value, "prim")){
+                    border_style = BOX_PRIMITIVE;
+                } else {
+                    fprintf(stderr, "[css_parse][error] border type \"%s\" is unknown\n", attr->value);
                     exit(-13);
                 }
             } else {
@@ -256,6 +278,13 @@ void css_parsewidgets(
                     if (color.b != -1) raw->color.b = color.b;
                     if (box_style != BOX_TYPE_UNDEFINED) raw->type = box_style;
                     break;
+                }
+                case CONTAINER_WIDGET: {
+                    struct Container* raw = (struct Container*)((*wg)->wgdata);
+                    if (color.r != -1) raw->border_clr.r = color.r;
+                    if (color.g != -1) raw->border_clr.g = color.g;
+                    if (color.b != -1) raw->border_clr.b = color.b;
+                    if (box_style != BOX_TYPE_UNDEFINED) raw->border_type = border_style;
                 }
             }
         }

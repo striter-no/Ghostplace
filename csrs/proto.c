@@ -99,7 +99,7 @@ void proto_serial(
 MSG_TYPE CONTTYPE PROTO_VER PATH CONT_SIZE\n
 CONTENT
 */
-void proto_deserial(
+int proto_deserial(
     struct proto_msg *out,
     struct qbuffer *buff
 ){
@@ -109,7 +109,7 @@ void proto_deserial(
     // Проверяем минимальный размер буфера (даже для пустого заголовка)
     if (buff->size < 10) {
         fprintf(stderr, "[proto][error] buffer too small for header\n");
-        return;
+        return -1;
     }
     
     // Ищем конец заголовка (первый '\n')
@@ -121,14 +121,14 @@ void proto_deserial(
     // Если не найден конец заголовка
     if (header_end >= buff->size || buff->bytes[header_end] != '\n') {
         fprintf(stderr, "[proto][error] header delimiter not found\n");
-        return;
+        return -2;
     }
     
     // Создаем временный буфер для заголовка (без \n)
     char *header = (char *)malloc(header_end + 1);
     if (!header) {
         fprintf(stderr, "[proto][error] memory allocation failed\n");
-        return;
+        return -3;
     }
     
     // Копируем заголовок и добавляем терминатор
@@ -144,7 +144,7 @@ void proto_deserial(
     if (!token) {
         fprintf(stderr, "[proto][error] missing MSG_TYPE\n");
         free(header);
-        return;
+        return -4;
     }
     out->type = (enum PROTO_MSG_TYPE)atoi(token);
     
@@ -153,7 +153,7 @@ void proto_deserial(
     if (!token) {
         fprintf(stderr, "[proto][error] missing CONTTYPE\n");
         free(header);
-        return;
+        return -5;
     }
     out->conttype = (enum PROTO_CONT_TYPE)atoi(token);
     
@@ -162,7 +162,7 @@ void proto_deserial(
     if (!token) {
         fprintf(stderr, "[proto][error] missing PROTO_VER\n");
         free(header);
-        return;
+        return -6;
     }
     out->proto_ver = atoi(token);
     
@@ -171,7 +171,7 @@ void proto_deserial(
     if (!token) {
         fprintf(stderr, "[proto][error] missing PATH\n");
         free(header);
-        return;
+        return -7;
     }
     out->path = strdup(token);
     
@@ -180,7 +180,7 @@ void proto_deserial(
     if (!token) {
         fprintf(stderr, "[proto][error] missing CONT_SIZE\n");
         free(header);
-        return;
+        return -8;
     }
     out->cont_size = (size_t)atoi(token);
     
@@ -192,7 +192,7 @@ void proto_deserial(
         free(header);
         free(out->path);
         memset(out, 0, sizeof(struct proto_msg));
-        return;
+        return -9;
     }
     
     // Выделяем память для контента и копируем
@@ -202,13 +202,14 @@ void proto_deserial(
         free(header);
         free(out->path);
         memset(out, 0, sizeof(struct proto_msg));
-        return;
+        return -10;
     }
     
     memcpy(out->content, buff->bytes + content_start, out->cont_size);
     
     // Очищаем временные ресурсы
     free(header);
+    return 0;
 }
 
 void proto_copy(

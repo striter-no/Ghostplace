@@ -80,12 +80,17 @@ struct Container {
 
     i64 int_xofs, int_yofs;
     byte scrollable;
+    
+    int border_mode;
+    enum BOX_TYPE border_type;
+    struct rgb border_clr;
 };
 
 void create_cont(
     struct Container *cont,
     enum WG_CONTAINER_POS storing,
-    byte scroll
+    byte scroll,
+    int border
 );
 
 void container_cpy(
@@ -137,6 +142,7 @@ void rem_widget(
 
 
 struct Rect snap_rect(
+    char is_bordered,
     struct Rect parrent, 
     struct Rect widget,
     struct Rect og_rect,

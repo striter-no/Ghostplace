@@ -1,6 +1,6 @@
 <cnt>
     <img src="./assets/earth2.png" class="bg"></img>
-    <cnt>
+    <cnt border="in" clr-border="255 0 0" >
         <text>Test</text>
     </cnt>
     <cnt store="hz">

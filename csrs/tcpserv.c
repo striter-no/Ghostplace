@@ -141,10 +141,18 @@ void tcp_create(
     const char *ip,
     int port
 ){
+
+    
     serv->sockfd = socket(AF_INET, SOCK_STREAM, 0); 
     if (serv->sockfd == -1) { 
         fprintf(stderr, "[tcp_serv][error] socket creation failed\n"); 
         exit(-1); 
+    }
+    
+    int opt = 1;
+    if (setsockopt(serv->sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        fprintf(stderr, "[tcp_serv][error] setsockopt failed\n"); 
+        exit(-3); 
     }
 
     bzero(&serv->servaddr, sizeof(serv->servaddr)); 

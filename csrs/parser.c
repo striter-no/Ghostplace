@@ -63,6 +63,9 @@ void init_container(struct tag *tag, struct Widget **out){
     struct Rect rect = {0, 0, -1, -1};
     enum WG_CONTAINER_POS pos = CWG_VERTICLLY;
     byte scrollable = 1;
+    int border = 0;
+    enum BOX_TYPE border_type = BOX_ONE_LINE;
+    struct rgb border_clr = {255, 255, 255};
 
     char *class = NULL;
     for (int i = 0; i < tag->attrs_used; i++){
@@ -79,6 +82,30 @@ void init_container(struct tag *tag, struct Widget **out){
             rect.w = atoi(attr->value);
         } else if (strcmp(attr->name, "h") == 0){
             rect.h = atoi(attr->value);
+        } else if (strcmp(attr->name, "border") == 0){
+            border = strcmp(attr->name, "in") == 0 ? 1 : 2;
+        } else if (strcmp(attr->name, "clr-border") == 0){
+            int r, g, b;
+            if (sscanf(attr->value, "%d %d %d", &r, &g, &b) != 3){
+                fprintf(stderr, "[init_container][error] clr needs to be in format \"R G B\", but it is: \"%s\"\n", attr->value);
+                exit(-6);
+            }
+            border_clr.r = r;
+            border_clr.g = g;
+            border_clr.b = b;
+        } else if (strcmp(attr->name, "type-border") == 0){
+            if (strcmp(attr->value, "one") == 0){
+                border_type = BOX_ONE_LINE;
+            } else if (strcmp(attr->value, "double") == 0){
+                border_type = BOX_DOUBLE;
+            } else if (strcmp(attr->value, "round") == 0){
+                border_type = BOX_ROUNDED;
+            } else if(strcmp(attr->value, "prim")){
+                border_type = BOX_PRIMITIVE;
+            } else {
+                fprintf(stderr, "[init_container][error] border type \"%s\" is unknown\n", attr->value);
+                exit(-13);
+            }
         } else {
             fprintf(stderr, "[init_container][error] container attr \"%s\" is unknown\n", attr->name);
             exit(-3);
@@ -86,7 +113,10 @@ void init_container(struct tag *tag, struct Widget **out){
     }
 
     create_widget(out, CONTAINER_WIDGET, rect);
-    create_cont((*out)->wgdata, pos, scrollable);
+    create_cont((*out)->wgdata, pos, scrollable, border);
+    struct Container *cont = (*out)->wgdata;
+    cont->border_clr = border_clr;
+    cont->border_type = border_type;
     
     if (class){
         strcpy((*out)->class, class);

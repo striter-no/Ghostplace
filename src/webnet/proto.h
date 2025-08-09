@@ -47,7 +47,7 @@ void proto_serial(
 MSG_TYPE CONTTYPE PROTO_VER PATH CONT_SIZE\n
 CONTENT
 */
-void proto_deserial(
+int proto_deserial(
     struct proto_msg *out,
     struct qbuffer *buff
 );

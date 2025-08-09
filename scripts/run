@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 reset
-./bin/"$1"
+./bin/"$1" "${@:2}"

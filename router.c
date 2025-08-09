@@ -14,7 +14,7 @@ void callback(
 ){
     struct proto_msg inp_msg, out_msg;
     int status = proto_deserial(&inp_msg, inp);
-    if (status < 1){
+    if (status != 0){
         printf("[warning][callback] deserial failure\n");
         out_msg = (struct proto_msg){
             .type = GET,

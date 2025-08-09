@@ -12,15 +12,35 @@ struct Widget *main_cnt = NULL;
 static struct Keyboard kb;
 static struct Mouse mouse;
 
-const char router_ip[] = "127.0.0.1";
-int        router_port = 8520;
+char router_ip[20] = {0};
+int  router_port = 9000;
 
 void *detached(void *args);
 void update(struct tgr_app *app);
 int update_to_site(struct tgr_app *app, const char *domain_name);
 
-int main(){
+int main(int argc, char *argv[]){
     // TUI INIT
+
+    if (argc < 3){
+        fprintf(stderr, "[error] usage: %s ip port\n", argv[0]);
+        exit(-1);
+    }
+
+    if (strlen(argv[1]) >= 20){
+        fprintf(stderr, "[error] argv[1] (ip) is more than 19 simbols");
+        fprintf(stderr, "[error] usage: %s ip port\n", argv[0]);
+        exit(-1);
+    }
+
+    if (atoi(argv[2]) == 0){
+        fprintf(stderr, "[error] argv[2] (port) can not be equal to zero (or be non-digital)");
+        fprintf(stderr, "[error] usage: %s ip port\n", argv[0]);
+        exit(-1);
+    }
+
+    strcat(router_ip, argv[1]);
+    router_port = atoi(argv[2]);
 
     struct tgr_app app;
     tgr_init(&app);

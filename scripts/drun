@@ -1,3 +1,11 @@
 #!/usr/bin/env bash
 reset
-valgrind --exit-on-first-error=yes --leak-check=full --show-leak-kinds=all --track-origins=yes --suppressions=./scripts/valgrind.supp ./bin/"$1"
+
+valgrind \
+    --exit-on-first-error=yes \
+    --leak-check=full \
+    --show-leak-kinds=all \
+    --track-origins=yes \
+    --suppressions=./scripts/valgrind.supp \
+
+./bin/"$1" "${@:2}"

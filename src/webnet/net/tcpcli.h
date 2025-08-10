@@ -11,7 +11,8 @@
 #include <errno.h>
 #include <queue.h>
 #include <unistd.h> // read(), write(), close()
-#define TCP_MAX_BUFFER 4096 
+#include "tcputils.h"
+#define TCP_MAX_BUFFER 1024 
 
 #ifndef min
 #define min(a, b) ((a) > (b) ? (b) : (a))

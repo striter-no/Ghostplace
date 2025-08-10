@@ -30,21 +30,21 @@ void request_site(
     struct proto_msg *msgs = NULL;
     size_t got_msgs = 0;
 
-    // **printf("[log] awaiting for messages\n");
+    printf("[log] awaiting for messages\n");
     struct qbuffer ibuff;
     await_pop(&cli->input_queue, &ibuff);
 
     struct proto_msg enum_msg;
     proto_deserial(&enum_msg, &ibuff);
     clear_qbuffer(&ibuff);
-    // proto_print(&enum_msg);
+    proto_print(&enum_msg);
 
     struct proto_msg *get_msgs = NULL;
     size_t msgs_size = 0;
     int out = get_get_messages(&enum_msg, &get_msgs, &msgs_size);
     proto_msg_free(&enum_msg);
 
-    // **printf("[log]{%d} requesting %d messages\n", out, msgs_size);
+    printf("[log]{%d} requesting %d messages\n", out, msgs_size);
     for (size_t i = 0; i < msgs_size; i++){
         struct qbuffer obuff;
         char path_buffer[150] = {0};
@@ -54,29 +54,29 @@ void request_site(
         free(get_msgs[i].path);
         get_msgs[i].path = strdup(path_buffer);
 
-        // **printf("[log] requesting by path: %s\n", get_msgs[i].path);
+        printf("[log] requesting by path: %s\n", get_msgs[i].path);
         proto_serial(&get_msgs[i], &obuff);
         push_buffer(&cli->output_queue, &obuff);
         clear_qbuffer(&obuff);
 
         struct qbuffer ibuff;
         await_pop(&cli->input_queue, &ibuff);
-        // **printf("[log] got %d message\n", i + 1);
+        printf("[log] got %d message\n", i + 1);
         
         msgs = (struct proto_msg*)realloc(msgs, sizeof(struct proto_msg) * (++got_msgs));
         proto_deserial(&msgs[i], &ibuff);
-        // proto_print(&msgs[i]);
+        proto_print(&msgs[i]);
         clear_qbuffer(&ibuff);
     }
 
-    // **printf("[log] all got\n");
+    printf("[log] all got\n");
 
     for (size_t i = 0; i < msgs_size; i++)
         proto_msg_free(&get_msgs[i]);
     free(get_msgs);
 
     out = decompose_site(site_out, msgs, got_msgs);
-    // **printf("[log]{%d} decomposing site\n", out);
+    printf("[log]{%d} decomposing site\n", out);
 
     free(site_out->domain_name);
     site_out->domain_name = strdup(main_path);

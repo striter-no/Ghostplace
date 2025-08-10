@@ -349,7 +349,7 @@ byte px_in_bounds(
     struct tgr_app *app,
     i64 x, i64 y
 ){
-    return x >= 0 && x <= app->TERM_WIDTH && y >= 0 && y < app->TERM_HEIGHT; 
+    return x >= 0 && x < app->TERM_WIDTH && y >= 0 && y < app->TERM_HEIGHT; 
 }
 
 void tgr_tpix_set(

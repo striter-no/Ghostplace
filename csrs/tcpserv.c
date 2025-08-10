@@ -53,6 +53,24 @@ void *__TCP_serv_cli_thread(void *voidargs){
             continue;
         }
 
+        uint32_t net_size = 0;
+        ssize_t header_read = full_read(cli->connfd, &net_size, sizeof(net_size));
+
+        if (header_read == 0) {
+            printf("[log] client disconnected\n");
+            local_running = 0;
+            goto __thr_exit;
+        }
+        
+        if (header_read < 0 || header_read < sizeof(net_size)) {
+            fprintf(stderr, "[error] failed to read full header: %s\n", strerror(errno));
+            local_running = 0;
+            goto __thr_exit;
+        }
+
+        uint32_t need_to_read = ntohl(net_size);
+        printf("[log] expecting %u bytes of data\n", need_to_read);
+
         uint8_t *buffer = NULL; size_t buff_size = 0;
         while (1){
             uint8_t inp_buffer[TCP_MAX_BUFFER] = {0};
@@ -88,13 +106,13 @@ void *__TCP_serv_cli_thread(void *voidargs){
 
             buff_size += got_bytes;
             
-            if (got_bytes < TCP_MAX_BUFFER){
+            if (buff_size >= need_to_read){
                 break;
             }
         }
 
         // inp_buffer[got_bytes] = '\0';
-        // !*printf("[log] got this bytes: %s\n", inp_buffer);
+        printf("[log] got %d out of %d bytes\n", buff_size, need_to_read);
 
         struct qbuffer ibuf;
         create_qbuffer(&ibuf, buff_size + 1);
@@ -111,18 +129,18 @@ void *__TCP_serv_cli_thread(void *voidargs){
             if (has_data != 0)
                 continue;
             
-            size_t total_written = 0;
-            while (1){
-                size_t to_write = min(obuf.size - total_written, TCP_MAX_BUFFER);
-                ssize_t written = write(cli->connfd, obuf.bytes + total_written, to_write);
-                if (written < 0){
-                    fprintf(stderr, "[warning][read] error while writing to socket (%d bytes)\n", obuf.size);
-                } else {
-                    total_written += to_write;
-                    if (to_write < TCP_MAX_BUFFER) 
-                        break;
-                }
+            uint32_t net_size = htonl(obuf.size);
+            if (full_write(cli->connfd, &net_size, sizeof(net_size)) < 0) {
+                fprintf(stderr, "[error] failed to send header: %s\n", strerror(errno));
+                clear_qbuffer(&obuf);
+                continue;
             }
+            
+            // Отправляем данные
+            if (full_write(cli->connfd, obuf.bytes, obuf.size) < 0) {
+                fprintf(stderr, "[error] failed to send data: %s\n", strerror(errno));
+            }
+
             clear_qbuffer(&obuf);
         }
 

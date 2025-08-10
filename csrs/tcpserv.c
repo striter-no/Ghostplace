@@ -69,10 +69,33 @@ void *__TCP_serv_cli_thread(void *voidargs){
         }
 
         uint32_t need_to_read = ntohl(net_size);
+        if (need_to_read > MAX_EXPECTING_DATA){
+            printf("[warn] enourmous amount of data to expect. (%u) skipping\n", need_to_read);
+            goto answer;
+        }
         printf("[log] expecting %u bytes of data\n", need_to_read);
+
+        struct timespec start_time;
+        clock_gettime(CLOCK_MONOTONIC, &start_time);
 
         uint8_t *buffer = NULL; size_t buff_size = 0;
         while (1){
+
+            struct timespec now;
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            long elapsed_ms = (now.tv_sec - start_time.tv_sec) * 1000 + 
+                             (now.tv_nsec - start_time.tv_nsec) / 1000000;
+            
+            if (elapsed_ms > TOTAL_TIMEOUT_MS) {
+                if (buffer){
+                    free(buffer);
+                }
+                
+                fprintf(stderr, "[error] timeout while reading header from client\n");
+                local_running = 0;
+                goto __thr_exit;
+            }
+
             uint8_t inp_buffer[TCP_MAX_BUFFER] = {0};
             ssize_t got_bytes = 0;
 
@@ -81,10 +104,9 @@ void *__TCP_serv_cli_thread(void *voidargs){
             // **printf("[log] reading...\n");
             got_bytes = read(cli->connfd, inp_buffer, sizeof(inp_buffer));
             if (got_bytes == 0){
-                // **printf("[log] client disconnected\n");
+                printf("[log] client disconnected (0 read)\n");
                 local_running = 0;
                 goto __thr_exit;
-                break;
             }
 
             if (got_bytes < 0){
@@ -92,7 +114,6 @@ void *__TCP_serv_cli_thread(void *voidargs){
                 fprintf(stderr, "[log][__TCP_serv_cli_thread] breaking from loop\n");
                 local_running = 0;
                 goto __thr_exit;
-                break;
             }
 
             uint8_t *localb = realloc(buffer, buff_size + got_bytes);

@@ -17,6 +17,9 @@
 #define min(a, b) ((a) > (b) ? (b) : (a))
 #endif
 
+#define MAX_EXPECTING_DATA 1024 * 1024 * 5
+#define TOTAL_TIMEOUT_MS 3 * 1000
+
 struct __TCP_serv_cli {
     pthread_t sthread;
     int connfd;

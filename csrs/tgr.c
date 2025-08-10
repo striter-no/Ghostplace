@@ -87,14 +87,49 @@ void tgr_run(
         
         update(app);
 
-        if (!app->__frame_changed)
-            goto __tgr_upd_end;
+        // if (!app->__frame_changed)
+        //     goto __tgr_upd_end;
 
         term_write("\033[H", 3);
         size_t allbuff_s = 0;
         char *allbytes = NULL;
         for (u64 y = 0; y < app->TERM_HEIGHT; y++){
-            for (u64 x = 0; x < app->TERM_WIDTH - 1; x++){
+            u64 sx = 0, ex = app->TERM_WIDTH - 1;
+            if (app->ticks == 0) goto __draw_row;
+
+             int row_has_changes = 0;
+
+            for (u64 x = 0; x < app->TERM_WIDTH; x++) {
+                if (!pix_cmp(
+                    &app->pix_displ[y * app->TERM_WIDTH + x],
+                    &app->last_px_displ[y * app->TERM_WIDTH + x]
+                )) {
+                    sx = x;
+                    row_has_changes = 1;
+                    break;
+                }
+            }
+
+            if (!row_has_changes) continue;
+
+            for (u64 x = app->TERM_WIDTH - 1; x >= sx; x--) {
+                if (!pix_cmp(
+                    &app->pix_displ[y * app->TERM_WIDTH + x],
+                    &app->last_px_displ[y * app->TERM_WIDTH + x]
+                )) {
+                    ex = x;
+                    break;
+                }
+            } 
+
+            char cursor_cmd[25] = {0};
+            int cursor_len = sprintf(cursor_cmd, "\033[%d;%dH", y + 1, sx + 1);
+            allbytes = (char*)realloc(allbytes, allbuff_s + strlen(cursor_cmd));
+            memcpy(allbytes + allbuff_s, cursor_cmd, strlen(cursor_cmd));
+            allbuff_s += strlen(cursor_cmd);
+
+            __draw_row: {;}
+            for (u64 x = sx; x <= ex; x++){
                 struct pixel curr = app->pix_displ[y * app->TERM_WIDTH + x];
 
                 char buff[250] = {0};
@@ -166,6 +201,7 @@ void tgr_run(
             }
         }
 
+        
         term_write(allbytes, allbuff_s);
         free(allbytes);
         app->__frame_changed = 0;
@@ -190,6 +226,8 @@ void tgr_run(
             app->__millis_passed += dt;
             app->__frames++;
             app->ticks++;
+
+            memcpy(app->last_px_displ, app->pix_displ, sizeof(struct pixel) * app->TERM_HEIGHT * app->TERM_WIDTH);
         }
     }
     pthread_join(hid_thread, NULL);
@@ -227,6 +265,13 @@ void tgr_init(
         abort();
     }
 
+    app->last_px_displ = (struct pixel*)malloc(size);
+
+    if (app->last_px_displ == NULL){
+        fprintf(stderr, "tgr_init:malloc(1):failed for %d bytes", size);
+        abort();
+    }
+
     for (u64 y = 0; y < app->TERM_HEIGHT; y++){
         for (u64 x = 0; x < app->TERM_WIDTH; x++){
             app->pix_displ[y * app->TERM_WIDTH + x] = (struct pixel){
@@ -254,6 +299,7 @@ void tgr_end(
     __TGR_MTB_CTRL_C_PRESSED = 0;
     clear_queue(&app->inp_queue);
     free(app->pix_displ);
+    free(app->last_px_displ);
     term_reset(&app->__raw_term);
 }
 
@@ -286,10 +332,18 @@ void rgb_string_insert(
     i64 x, i64 y,
     struct rgb color
 ){
+    i64 sx = x;
     u64 sz = utf32_strlen(string);
     for (u64 i = 0; i < sz; i++){
-        struct pixel *pix = tgr_tpx_get(app, x + i, y);
+        if (string[i] == '\n') {
+            y++;
+            x = sx;
+            continue;
+        }
+
+        struct pixel *pix = tgr_tpx_get(app, x++, y);
         if (!pix) continue;
+
         if (!app->__frame_changed || pix->unich != string[i])
             app->__frame_changed = 1;
         else

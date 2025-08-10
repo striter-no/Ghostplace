@@ -178,8 +178,8 @@ void update(struct tgr_app *app){
     }
 
     // FPS =======================
-    char fpsbuff[20];
-    sprintf(fpsbuff, "%d", app->fps);
+    char fpsbuff[60];
+    sprintf(fpsbuff, "%dx%d\n%d", app->TERM_WIDTH, app->TERM_HEIGHT, app->fps);
 
     int32_t *unistr;
     utf8_conv(fpsbuff, &unistr);

@@ -59,7 +59,7 @@ struct tgr_app {
     f64 deltaTime;
     
     struct queue inp_queue;
-    struct pixel *pix_displ;
+    struct pixel *pix_displ, *last_px_displ;
 };
 
 // =================== PIXEL ====================

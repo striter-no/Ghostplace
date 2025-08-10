@@ -15,4 +15,5 @@ cd ..
 ./scripts/rbuild router "$1"
 
 mkdir -p bin
+mkdir -p assets/databases
 echo "Done"

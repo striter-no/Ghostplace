@@ -4,4 +4,4 @@ git reset --hard
 git fetch
 git merge origin/main
 
-./scripts/rbuild router gcc-14 && ./scripts/run router "$1" "$2"
+./scripts/rbuild router "$1"

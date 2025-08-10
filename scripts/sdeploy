@@ -1,17 +1,20 @@
 #!/bin/bash
 
 # clone utf8proc
-wget https://github.com/JuliaStrings/utf8proc/releases/download/v2.10.0/utf8proc-2.10.0.tar.gz
-tar -xf ./utf8proc-2.10.0.tar.gz
-rm -f ./utf8proc-2.10.0.tar.gz
+if ! find /usr/local/lib /usr/lib /lib -type f -name 'libutf8proc*' -print -quit | grep -q .; then
+    wget https://github.com/JuliaStrings/utf8proc/releases/download/v2.10.0/utf8proc-2.10.0.tar.gz
+    tar -xf ./utf8proc-2.10.0.tar.gz
+    rm -f ./utf8proc-2.10.0.tar.gz
 
-# build utf8proc
-cd ./utf8proc*
-make
-make install
+    # build utf8proc
+    cd ./utf8proc*
+    make
+    make install
 
-# building server
-cd ..
+    # building server
+    cd ..
+fi
+
 ./scripts/rbuild router "$1"
 
 mkdir -p bin

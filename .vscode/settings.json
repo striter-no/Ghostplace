@@ -42,7 +42,22 @@
         "router.h": "c",
         "term.h": "c",
         "cssparser.h": "c",
-        "ghcli.h": "c"
+        "ghcli.h": "c",
+        "utf8proc.h": "c"
     },
-    "C_Cpp.default.compilerPath": "/usr/bin/clang-18"
+    "C_Cpp.default.compilerPath": "/usr/bin/clang-18",
+    "C_Cpp.intelliSenseEngine": "disabled",  // Отключаем Microsoft C/C++
+    "clangd.enable": true,
+    "clangd.path": "/usr/bin/clangd",
+    "clangd.arguments": [
+        "--background-index",
+        "--suggest-missing-includes",
+        "--header-insertion=never",
+        "--completion-style=detailed",
+        "--query-driver=/usr/bin/gcc,/usr/bin/g++"  // Важно для вашей системы
+    ],
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeIncludes": true
+    }
 }

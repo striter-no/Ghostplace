@@ -16,7 +16,7 @@ $CC -pedantic -Wall -Wextra -O3 -o "$EXEC_NAME" \
     ./code/"$EXEC_NAME".c \
     $SRC_FILES \
     -I ./code/ghpl-lib/include \
-    -lm -lutf8proc -lpthread
+    -lm -lutf8proc -lpthread -llua5.4 -ldl
 
 if [ $? -eq 0 ]; then
     echo -e "\033[1;32mCompilation successful!\033[0m"

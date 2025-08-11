@@ -12,6 +12,13 @@
 
 ## Инструкция по сборке
 
+Вам потребуется установить библиотеку `liblua-5.4-dev` для работы с последними версиями. Пример, как это сделать на Ubuntu/Debian:
+
+```sh
+sudo apt update
+sudo apt install liblua5.4-dev
+```
+
 Скрипт установит библиотеку [utf8proc](https://github.com/JuliaStrings/utf8proc) в /usr/local/lib, если у вас ее нет. Также убедитесь, что компилятор видит путь `/usr/local/lib` 
 
 #### Для сборки клиента

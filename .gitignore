@@ -4,3 +4,6 @@ venv
 .tmp_sites
 assets/databases/*
 __pycache__
+compile_commands.json
+.clangd
+.cache

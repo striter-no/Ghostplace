@@ -3,7 +3,7 @@
 
 void save_site(
     struct site *site,
-    const char *dirpath
+    char *dirpath
 ){
     path_sanitize(dirpath);
 
@@ -17,11 +17,11 @@ void save_site(
     mkdir_p(fullpath, 0755);
     strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name), "/index.ghml");
     
-    writefile(fullpath, "w", site->ghml_content, strlen(site->ghml_content) + 1);
+    writefile(fullpath, "w", (uint8_t*)site->ghml_content, strlen(site->ghml_content) + 1);
     fullpath[strlen(dirpath) + 1 + strlen(site->domain_name)] = '\0';
     if (site->has_gss){
         strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name), "/styles.gss");
-        writefile(fullpath, "w", site->gss_content, strlen(site->gss_content) + 1);
+        writefile(fullpath, "w", (uint8_t*)site->gss_content, strlen(site->gss_content) + 1);
     }
     
     fullpath[strlen(dirpath) + 1 + strlen(site->domain_name)] = '\0';
@@ -43,8 +43,8 @@ void save_site(
 
 int load_site(
     struct site *site,
-    const char *main_dirpath,
-    const char *site_domain
+    char *main_dirpath,
+    char *site_domain
 ){
     path_sanitize(main_dirpath);
     path_sanitize(site_domain);
@@ -119,7 +119,7 @@ int load_site(
 }
 
 void update_site_db(
-    const char *main_dirpath,
+    char *main_dirpath,
     struct site *sites,
     size_t *sites_num
 ){
@@ -136,13 +136,14 @@ void update_site_db(
     }
 
     free_list_cstr(dirs, dirs_n);
+    *sites_num = dirs_n;
 }
 
 void find_site(
     struct site *sites,
     size_t sites_num,
 
-    const char *domain_name,
+    char *domain_name,
     struct site **out
 ){
     for (size_t i = 0; i < sites_num; i++){
@@ -180,13 +181,13 @@ int decompose_site(
         // **printf("[log][decompose] path: \"%s\"\n", msg->path);
 
         if (strcmp(msg->path, "index.ghml") == 0){
-            site->ghml_content = strdup(msg->content);
+            site->ghml_content = strdup((char*)msg->content);
             was_ghml = 1;
             continue;
         }
 
         if (strcmp(msg->path, "styles.gss") == 0){
-            site->gss_content = strdup(msg->content);
+            site->gss_content = strdup((char*)msg->content);
             was_gss = 1;
             continue;
         }
@@ -225,7 +226,7 @@ void compose_enum(
     msg->conttype = TEXT_CONT;
     msg->path = strdup("/");
     msg->proto_ver = 0;
-    msg->content = strdup("");
+    msg->content = (uint8_t*)strdup("");
     msg->cont_size = 1;
     
     smart_strcat((char**)&msg->content, "index.ghml\n");
@@ -241,7 +242,7 @@ void compose_enum(
         smart_strcat((char**)&msg->content, lbuff);
     }
 
-    msg->cont_size = strlen(msg->content) + 1;
+    msg->cont_size = strlen((char*)msg->content) + 1;
 }
 
 int get_get_messages(
@@ -250,7 +251,7 @@ int get_get_messages(
     size_t *messages_n
 ){
     char **tokens = NULL;
-    size_t ntoks = toksplit(a_enum_msg->content, "\n", &tokens);
+    size_t ntoks = toksplit((char*)a_enum_msg->content, "\n", &tokens);
 
     if (ntoks == 0) {
         free_list_cstr(tokens, ntoks);
@@ -263,7 +264,7 @@ int get_get_messages(
         msg->type = GET;
         msg->conttype = TEXT_CONT;
         msg->proto_ver = 0;
-        msg->content = strdup("");
+        msg->content = (uint8_t*)strdup("");
         msg->cont_size = 1;
 
         msg->path = strdup(tokens[i]);
@@ -276,7 +277,7 @@ int get_get_messages(
 
 int compose_by_path(
     struct site *site,
-    const char *path,
+    char *path,
 
     struct proto_msg *msg
 ){
@@ -295,7 +296,7 @@ int compose_by_path(
     msg->cont_size = 1;
 
     if (strcmp(tokens[0], "index.ghml") == 0){
-        set_proto_content(msg, site->ghml_content, strlen(site->ghml_content) + 1);
+        set_proto_content(msg, (uint8_t*)site->ghml_content, strlen(site->ghml_content) + 1);
         free_list_cstr(tokens, ntoks);
         return 0;
     }
@@ -306,7 +307,7 @@ int compose_by_path(
             return -3;
         }
         
-        set_proto_content(msg, site->gss_content, strlen(site->gss_content) + 1);
+        set_proto_content(msg, (uint8_t*)site->gss_content, strlen(site->gss_content) + 1);
         free_list_cstr(tokens, ntoks);
         return 0;
     }
@@ -320,7 +321,7 @@ int compose_by_path(
         for (size_t i = 0; i < site->assets_n; i++){
             if (strcmp(site->assets[i].name, tokens[1]) == 0){
                 struct site_asset *asset = &site->assets[i];
-                set_proto_content(msg, asset->content, asset->cont_len);
+                set_proto_content(msg, (uint8_t*)asset->content, asset->cont_len);
                 
                 free_list_cstr(tokens, ntoks);
                 return 0;

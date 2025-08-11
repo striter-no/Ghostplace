@@ -62,12 +62,13 @@ void *__TCP_serv_cli_thread(void *voidargs){
             goto __thr_exit;
         }
         
-        if (header_read < 0 || header_read < sizeof(net_size)) {
+        if (header_read < 0 || (size_t)header_read < sizeof(net_size)) {
             fprintf(stderr, "[error] failed to read full header: %s\n", strerror(errno));
             local_running = 0;
             goto __thr_exit;
         }
 
+        header_read = (size_t)header_read;
         uint32_t need_to_read = ntohl(net_size);
         if (need_to_read > MAX_EXPECTING_DATA){
             printf("[warn] enourmous amount of data to expect. (%u) skipping\n", need_to_read);
@@ -110,7 +111,7 @@ void *__TCP_serv_cli_thread(void *voidargs){
             }
 
             if (got_bytes < 0){
-                fprintf(stderr, "[warning][read] error while reading from client socket (%d bytes)\n", got_bytes);
+                fprintf(stderr, "[warning][read] error while reading from client socket (%ld bytes)\n", got_bytes);
                 fprintf(stderr, "[log][__TCP_serv_cli_thread] breaking from loop\n");
                 local_running = 0;
                 goto __thr_exit;
@@ -118,7 +119,7 @@ void *__TCP_serv_cli_thread(void *voidargs){
 
             uint8_t *localb = realloc(buffer, buff_size + got_bytes);
             if (localb == NULL){
-                fprintf(stderr, "[non-crit-err][read] error while reallocating buffer in client socket (%d bytes, %d total)\n", got_bytes, buff_size + got_bytes);
+                fprintf(stderr, "[non-crit-err][read] error while reallocating buffer in client socket (%ld bytes, %ld total)\n", got_bytes, buff_size + got_bytes);
                 free(buffer);
                 goto answer;
             }
@@ -133,7 +134,7 @@ void *__TCP_serv_cli_thread(void *voidargs){
         }
 
         // inp_buffer[got_bytes] = '\0';
-        printf("[log] got %d out of %d bytes\n", buff_size, need_to_read);
+        printf("[log] got %ld out of %d bytes\n", buff_size, need_to_read);
 
         struct qbuffer ibuf;
         create_qbuffer(&ibuf, buff_size + 1);
@@ -297,7 +298,7 @@ void tcp_end_server(struct TCP_server *serv){
         usleep(10000); // 10ms
     }
     
-    for (size_t i = 0; i < serv->allocated_clients; i++){
+    for (ssize_t i = 0; i < serv->allocated_clients; i++){
         tcp_end_client(&serv->clients[i]);
     }
     

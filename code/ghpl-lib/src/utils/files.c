@@ -225,7 +225,7 @@ int readfile(const char *path, const char *mode, uint8_t **output, size_t *file_
     (*file_size) = ftell(file);
     fseek(file, 0, SEEK_SET);
 
-    (*output) = (char*)malloc((*file_size) + 1);
+    (*output) = (uint8_t*)malloc((*file_size) + 1);
     if (!(*output)) {
         fclose(file); perror("malloc");
         return 2;

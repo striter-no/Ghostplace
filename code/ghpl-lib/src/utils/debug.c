@@ -8,7 +8,7 @@ void __print_buffer(
     u64 lines = ceil((float)size / line_size);
 
     for (u64 i = 0, rm = 0; i < lines; i++){
-        printf("%.10x ", i * line_size);
+        printf("%.10lx ", i * line_size);
         
         for (u64 k = 0; k < line_size; k++){
             if (rm < size){

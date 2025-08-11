@@ -15,7 +15,7 @@ struct txt_style {
     const char *reset;
 };
 
-extern const struct txt_style styles[];
+extern struct txt_style styles[];
 
 enum TEXT_STYLE {
     STYLE_BOLD,
@@ -70,26 +70,26 @@ struct Box {
 
 void draw_image(
     struct tgr_app *app, 
-    const struct Image *img_wdg, 
+    struct Image *img_wdg, 
     struct Rect rect
 );
 
 void draw_image_dense(
     struct tgr_app *app, 
-    const struct Image *img_wdg, 
+    struct Image *img_wdg, 
     struct Rect rect
 );
 
 void draw_text(
     struct tgr_app *app, 
-    const struct Text *text, 
+    struct Text *text, 
     struct Rect rect
 );
 
 void draw_box(
     struct tgr_app *app, 
-    const struct Box *box, 
-    struct Rect rect
+    struct Box *box
+    // struct Rect rect
 );
 
 void imgwg_cpy(

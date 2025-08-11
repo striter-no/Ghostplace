@@ -31,7 +31,7 @@ void proto_constr(
 }
 
 static u32 count_dig_num(u32 num){
-    if (num >= 0 && num <= 9) return 1;
+    if (num <= 9) return 1;
     
     u32 i = 0;
     while (num > 0) {
@@ -53,7 +53,7 @@ void proto_print(struct proto_msg *msg){
         case BIN_CONT: printf("bin "); break;
     }
 
-    printf("%d\n", msg->proto_ver);
+    printf("%ld\n", msg->proto_ver);
     printf("%s ", msg->path);
     printf("%zu\n", msg->cont_size);
     
@@ -88,7 +88,7 @@ void proto_serial(
     create_qbuffer(buff, all_sizes + ucont_size);
     char *header = (char*)malloc(all_sizes + 1);
     // **printf("[debug] all size: %d\n", all_sizes);
-    sprintf(header, "%d %d %d %s %d\n", umsg_type, ucont_type, uproto_ver, inp->path, ucont_size);
+    sprintf(header, "%ld %ld %ld %s %ld\n", umsg_type, ucont_type, uproto_ver, inp->path, ucont_size);
     
     memcpy(buff->bytes, header, all_sizes);
     memcpy(buff->bytes + all_sizes, inp->content, ucont_size);

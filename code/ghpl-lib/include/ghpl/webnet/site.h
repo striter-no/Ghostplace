@@ -22,17 +22,17 @@ struct site {
 
 void save_site(
     struct site *site,
-    const char *dirpath
+    char *dirpath
 );
 
 int load_site(
     struct site *site,
-    const char *main_dirpath,
-    const char *site_dirname
+    char *main_dirpath,
+    char *site_dirname
 );
 
 void update_site_db(
-    const char *main_dirpath,
+    char *main_dirpath,
     struct site *sites,
     size_t *sites_num
 );
@@ -41,7 +41,7 @@ void find_site(
     struct site *sites,
     size_t sites_num,
 
-    const char *domain_name,
+    char *domain_name,
     struct site **out
 );
 
@@ -64,7 +64,7 @@ int get_get_messages(
 
 int compose_by_path(
     struct site *site,
-    const char *path,
+    char *path,
 
     struct proto_msg *msg
 );

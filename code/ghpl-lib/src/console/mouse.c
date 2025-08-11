@@ -3,25 +3,25 @@
 void enable_mouse(enum MOUSE_TRACKING_MODE mode){
     switch (mode){
         case MOUSE_NORMAL_TRACKING: 
-            term_write("\033[?1000h", 8); break;
+            term_write((int8_t*)"\033[?1000h", 8); break;
         case MOUSE_BUTTONS_TRACKING: 
-            term_write("\033[?1002h", 8); break;
+            term_write((int8_t*)"\033[?1002h", 8); break;
         case MOUSE_ANY_TRACKING: 
-            term_write("\033[?1003h", 8); break;
+            term_write((int8_t*)"\033[?1003h", 8); break;
     }
-    term_write("\033[?1006h", 8);
+    term_write((int8_t*)"\033[?1006h", 8);
 }
 
 void disable_mouse(enum MOUSE_TRACKING_MODE mode){
     switch (mode){
         case MOUSE_NORMAL_TRACKING: 
-            term_write("\033[?1000l", 8); break;
+            term_write((int8_t*)"\033[?1000l", 8); break;
         case MOUSE_BUTTONS_TRACKING: 
-            term_write("\033[?1002l", 8); break;
+            term_write((int8_t*)"\033[?1002l", 8); break;
         case MOUSE_ANY_TRACKING: 
-            term_write("\033[?1003l", 8); break;
+            term_write((int8_t*)"\033[?1003l", 8); break;
     }
-    term_write("\033[?1006l", 8);
+    term_write((int8_t*)"\033[?1006l", 8);
 }
 
 byte process_mouse(struct Mouse *mouse, byte *bytes, u64 size) {
@@ -36,7 +36,7 @@ byte process_mouse(struct Mouse *mouse, byte *bytes, u64 size) {
 
     // Разбиваем строку
     char *parts[3] = {0};
-    char *rest = cpbuff + 3; // Пропускаем \033[<
+    char *rest = (char*)cpbuff + 3; // Пропускаем \033[<
     parts[0] = strtok_r(rest, ";", &rest);
     parts[1] = strtok_r(NULL, ";", &rest);
     parts[2] = strtok_r(NULL, "",  &rest);

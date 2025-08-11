@@ -154,6 +154,6 @@ struct Rect snap_rect(
 
 void draw_container(
     struct tgr_app *app, 
-    const struct Container *cont, 
+    struct Container *cont, 
     struct Rect rect
 );

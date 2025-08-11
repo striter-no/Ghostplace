@@ -26,7 +26,7 @@ struct rgb {
 struct pixel {
     struct rgb color;
     struct rgb bgcolor;
-    u32 unich;
+    i32 unich;
     
     char prefix[15];
     char postfix[15];
@@ -53,8 +53,8 @@ struct tgr_app {
     i32 __frames;
     u64 __millis_passed;
 
-    u64 TERM_WIDTH;
-    u64 TERM_HEIGHT;
+    size_t TERM_WIDTH;
+    size_t TERM_HEIGHT;
     u64 ticks;
     f64 deltaTime;
     
@@ -118,7 +118,7 @@ void spec_string_insert(
 
 // ================== TGR SYSTEM ==================
 
-void __tgr_ctrl_c_handler(int signum);
+void __tgr_ctrl_c_handler();
 
 void tgr_fstop();
 

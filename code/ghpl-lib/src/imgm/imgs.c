@@ -15,7 +15,7 @@ void img_free(struct stb_img *img){
     stbi_image_free(img->data);
 }
 
-void get_px(struct stb_img *img, u64 x, u64 y, struct rgb *out){
+void get_px(struct stb_img *img, int x, int y, struct rgb *out){
     if (!in_img(img, x, y)) {
         out->r = -1;
         return;
@@ -27,7 +27,7 @@ void get_px(struct stb_img *img, u64 x, u64 y, struct rgb *out){
     out->b = img->data[index + 2];
 }
 
-void get_pxa(const struct stb_img *img, u64 x, u64 y, struct rgb *out, int *alpha){
+void get_pxa(const struct stb_img *img, int x, int y, struct rgb *out, int *alpha){
     // printf("getpxa: %i %i/%i %i\n", x, y, img->width, img->height);
     
     if (!in_img(img, x, y)) {
@@ -42,7 +42,7 @@ void get_pxa(const struct stb_img *img, u64 x, u64 y, struct rgb *out, int *alph
     *alpha = img->data[index + 3];
 }
 
-void set_px(struct stb_img *img, u64 x, u64 y, struct rgb clr){
+void set_px(struct stb_img *img, int x, int y, struct rgb clr){
     if (!in_img(img, x, y)) {
         return;
     }
@@ -53,7 +53,7 @@ void set_px(struct stb_img *img, u64 x, u64 y, struct rgb clr){
     img->data[index + 2] = clr.b;
 }
 
-void set_pxa(struct stb_img *img, u64 x, u64 y, struct rgb clr, int alpha){
+void set_pxa(struct stb_img *img, int x, int y, struct rgb clr, int alpha){
     if (!in_img(img, x, y)) {
         return;
     }
@@ -68,13 +68,13 @@ void set_pxa(struct stb_img *img, u64 x, u64 y, struct rgb clr, int alpha){
 void img_insert(
     struct tgr_app *app, 
     struct stb_img *img, 
-    u64 sx, u64 sy,
+    int sx, int sy,
     struct rgb baseclr
 ){
-    for (u64 y = 0; y < img->height; y++){
-        for (u64 x = 0; x < img->width * 2; x+=2){
-            struct rgb clr;
-            int alpha;
+    for (int y = 0; y < img->height; y++){
+        for (int x = 0; x < img->width * 2; x+=2){
+            struct rgb clr = {0};
+            int alpha = 0;
 
             get_pxa(img, x / 2, y, &clr, &alpha);
             clr.r *= baseclr.r / 255.f;
@@ -88,14 +88,14 @@ void img_insert(
     }
 }
 
-void img_crop(struct stb_img *img, u64 fx, u64 fy, u64 tx, u64 ty){
+void img_crop(struct stb_img *img, int fx, int fy, int tx, int ty){
     struct stb_img out;
     img_blank(&out, tx - fx, ty - fy, img->channels);
 
     byte isa = img->channels == 4;
-    for (u64 y = fy; y < ty; y++){
-        for (u64 x = fx; x < tx; x++){
-            struct rgb orig; int alpha;
+    for (int y = fy; y < ty; y++){
+        for (int x = fx; x < tx; x++){
+            struct rgb orig = {0}; int alpha = 0;
             if (isa) {
                 get_pxa(img, x, y, &orig, &alpha);
                 set_pxa(&out, x - fx, y - fy, orig, alpha);
@@ -124,13 +124,13 @@ void img_rmove(struct stb_img *to, struct stb_img *src){
     img_cpy(to, src);
 }
 
-void img_blank(struct stb_img *img, u64 w, u64 h, int channels){
+void img_blank(struct stb_img *img, int w, int h, int channels){
     img->channels = channels;
     img->width = w;
     img->height = h;
     img->data = malloc(w * h * channels);
 }
 
-byte in_img(struct stb_img *img, u64 x, u64 y){
+byte in_img(const struct stb_img *img, int x, int y){
     return x >= 0 && x < img->width && y >= 0 && y < img->height;
 }

@@ -101,7 +101,7 @@ int update_to_site(struct tgr_app *app, const char *domain_name){
     if (!xml_root) {
         destroy_site(&site);
         printf("Failed to parse GHML\n");
-        return 1;
+        return 2;
     }
 
     destroy_site(&site);
@@ -114,6 +114,8 @@ int update_to_site(struct tgr_app *app, const char *domain_name){
     // TCP end
     tcp_cli_disconn(&tcpcli);
     pthread_join(main_thread, NULL);
+
+    return 0;
 }
 
 void update(struct tgr_app *app){
@@ -122,7 +124,7 @@ void update(struct tgr_app *app){
 
     struct qbuffer buffer;
     if (0 == pop_buffer(&app->inp_queue, &buffer)){
-        process_mouse(&mouse, buffer.bytes, buffer.size);
+        process_mouse(&mouse, (int8_t*)buffer.bytes, buffer.size);
         // CTRL + F to go to some site
         char has_kbi = kb_process_input(&kb, buffer.bytes, buffer.size);
         if (has_kbi){
@@ -171,7 +173,7 @@ void update(struct tgr_app *app){
 
         if (site_domain){
             int32_t *unistr;
-            utf8_conv(site_domain, &unistr);
+            utf8_conv((uint8_t*)site_domain, &unistr);
             string_insert(app, unistr, 0, app->TERM_HEIGHT - 1);
             free(unistr);
         }
@@ -179,10 +181,10 @@ void update(struct tgr_app *app){
 
     // FPS =======================
     char fpsbuff[60];
-    sprintf(fpsbuff, "%dx%d\n%d", app->TERM_WIDTH, app->TERM_HEIGHT, app->fps);
+    sprintf(fpsbuff, "%ldx%ld\n%d", app->TERM_WIDTH, app->TERM_HEIGHT, app->fps);
 
     int32_t *unistr;
-    utf8_conv(fpsbuff, &unistr);
+    utf8_conv((uint8_t*)fpsbuff, &unistr);
     rgb_string_insert(app, unistr, 0, 0, (struct rgb){150, 200, 150});
     free(unistr);
 }

@@ -1,6 +1,6 @@
 #include <ghpl/web/widgets/base.h>
 
-const struct txt_style styles[] = {
+struct txt_style styles[] = {
     {"\033[1m", "\033[22m"}, // bold
     {"\033[2m", "\033[22m"}, // dim
     {"\033[3m", "\033[23m"}, // cursive
@@ -13,7 +13,7 @@ const struct txt_style styles[] = {
 
 void draw_image(
     struct tgr_app *app, 
-    const struct Image *img_wdg, 
+    struct Image *img_wdg, 
     struct Rect rect
 ){
     if (img_wdg->is_dense){
@@ -21,12 +21,12 @@ void draw_image(
         return;
     }
 
-    const struct stb_img *img = &img_wdg->img;
+    struct stb_img *img = &img_wdg->img;
     
     byte isa = img->channels == 4;
     u64 hy = min(img->height, rect.h);
     for (u64 y = 0; y < hy; y++){
-        for (i64 x = 0; x < min(rect.w, img->width * 2); x+=2){
+        for (i64 x = 0; x < min(rect.w, (int64_t)img->width * 2); x+=2){
             struct rgb clr;
             int alpha = -1;
 
@@ -46,22 +46,22 @@ void draw_image(
 
 void draw_image_dense(
     struct tgr_app *app, 
-    const struct Image *img_wdg, 
+    struct Image *img_wdg, 
     struct Rect rect
 ){
-    const struct stb_img *img = &img_wdg->img;
+    struct stb_img *img = &img_wdg->img;
     
     u64 rheight = img->height;
     int is_ok = rheight % 2 == 0;
 
     rheight += !is_ok;
-    u64 hy = min(rheight / 2, rect.h);
+    u64 hy = min(rheight / 2, (uint64_t)rect.h);
     
     i32 *i;
     utf8_conv((ubyte*)"▄", &i);
     byte isa = img->channels == 4;
     for (u64 y = 0; y < hy * 2; y += 2){
-        for (i64 x = 0; x < min(img->width, rect.w); x++){
+        for (i64 x = 0; x < min((int64_t)img->width, rect.w); x++){
             struct pixel *px = tgr_tpx_get(app, rect.x + x, rect.y + y / 2);
             if (!px) continue;
 
@@ -102,17 +102,16 @@ void draw_image_dense(
 
 void draw_text(
     struct tgr_app *app, 
-    const struct Text *text, 
+    struct Text *text, 
     struct Rect rect
 ) {
-    u64 max_chars = rect.w;
-    u64 text_len = utf32_strlen(text->unicode_txt);
+    size_t text_len = utf32_strlen(text->unicode_txt);
     // u64 num_chars = min(text_len, max_chars);
     
     i64 x = rect.x, y = rect.y;
     i64 bx = rect.x + rect.w, by = rect.y + rect.h; // borders
-    for (u64 i = 0; i < text_len; i++) {
-        uint32_t codepoint = (uint32_t)text->unicode_txt[i];
+    for (size_t i = 0; i < text_len; i++) {
+        int32_t codepoint = text->unicode_txt[i];
         
         if (codepoint == '\n'){
             if (y >= by) break;
@@ -149,8 +148,8 @@ void draw_text(
 
 void draw_box(
     struct tgr_app *app, 
-    const struct Box *box, 
-    struct Rect rect
+    struct Box *box 
+    // struct Rect rect
 ){
     i64 x = box->srect.x, y = box->srect.y;
     i64 bx = box->srect.x + box->srect.w, by = box->srect.y + box->srect.h; // borders
@@ -158,7 +157,7 @@ void draw_box(
     if (box->srect.h < 2 || box->srect.w < 2) 
         return;
 
-    const uint8_t *chars;
+    uint8_t *chars = NULL;
     switch (box->type){
         case BOX_ONE_LINE: 
             chars = (uint8_t*)__SYMBOLS_BOX_ONE; break;
@@ -168,6 +167,10 @@ void draw_box(
             chars = (uint8_t*)__SYMBOLS_BOX_ROUNDED; break;
         case BOX_PRIMITIVE: 
             chars = (uint8_t*)__SYMBOLS_PRIMITIVE; break;
+        case BOX_TYPE_UNDEFINED:
+        default:
+            chars = (uint8_t*)__SYMBOLS_PRIMITIVE; 
+        break;
     }
 
     if (chars == NULL) abort();
@@ -182,7 +185,7 @@ void draw_box(
         pix->unich = unichars[0];
     }
 
-    for (u64 i = x + 1; i < bx - 1; i++){
+    for (i64 i = x + 1; i < bx - 1; i++){
         struct pixel *pix = tgr_tpx_get(app, i, y);
         if (pix){// && in_rect(rect, i, y)){
             pix->color = box->color;
@@ -219,7 +222,7 @@ void draw_box(
         pix->unich = unichars[2];
     }
 
-    for (u64 i = x + 1; i < bx - 1; i++){
+    for (i64 i = x + 1; i < bx - 1; i++){
         struct pixel *pix = tgr_tpx_get(app, i, y);
         if (pix){// && in_rect(rect, i, y)){
             pix->color = box->color;

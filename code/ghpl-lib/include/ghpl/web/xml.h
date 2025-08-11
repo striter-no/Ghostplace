@@ -24,11 +24,9 @@ struct tag {
     char *content;
     char name[MAX_NAME];
     struct tag **children;  // ИЗМЕНЕНО: теперь массив указателей
-    u64 childrens_num;
-    u64 uid;
+    size_t childrens_num;
+    size_t uid;
 };
-
-static u64 next_uid = 1;
 
 struct tag* parse_xml(const char *input);
 void free_tag(struct tag *t);

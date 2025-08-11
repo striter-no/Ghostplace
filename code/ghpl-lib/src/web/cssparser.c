@@ -53,6 +53,7 @@ const char *__str_wgtype(enum WIDGET_TYPE type){
         case BOX_WIDGET: return "box";
         case IMAGE_WIDGET: return "image";
         case CONTAINER_WIDGET: return "container";
+        case WIDGET_UNDEFINED: return "undef";
     }
     return "undef";
 }
@@ -78,7 +79,6 @@ void css_parsewidgets(
         struct rgb color = {-1, -1, -1}; 
 
         enum BOX_TYPE border_style = BOX_TYPE_UNDEFINED;
-        struct rgb border_color = {-1, -1, -1}; 
 
         int txt_style = -1;
 
@@ -121,12 +121,6 @@ void css_parsewidgets(
                 color.g = atoi(attr->value);
             } else if (strcmp(attr->name, "clr.b") == 0){
                 color.b = atoi(attr->value);
-            } else if (strcmp(attr->name, "brd.clr.r") == 0){
-                border_color.r = atoi(attr->value);
-            } else if (strcmp(attr->name, "brd.clr.g") == 0){
-                border_color.g = atoi(attr->value);
-            } else if (strcmp(attr->name, "brd.clr.b") == 0){
-                border_color.b = atoi(attr->value);
             } else if (strcmp(attr->name, "txt.style") == 0){
                 if (strcmp(attr->value, "bold") == 0)
                     txt_style = STYLE_BOLD;
@@ -185,7 +179,7 @@ void css_parsewidgets(
 
             if (strcmp(curr->name, "all") != 0){
                 if (
-                !(curr->name[0] == '#' && (*wg)->class && 0 == strcmp(curr->name + 1, (*wg)->class)) && 
+                !(curr->name[0] == '#' && 0 == strcmp(curr->name + 1, (*wg)->class)) && 
                 !(curr->name[0] != '#' && strcmp(curr->name, __str_wgtype((*wg)->wgtype)) == 0)
                 )
                 continue;
@@ -248,6 +242,10 @@ void css_parsewidgets(
                             prelp->margin_down = -1;
                             prelp->margin_vcenter = relp_v[_i];
                             break;
+                        
+                        case M_RELP_UNDEFINED:
+                        default:
+                            break;
                     }
                 }
             }
@@ -286,6 +284,10 @@ void css_parsewidgets(
                     if (color.b != -1) raw->border_clr.b = color.b;
                     if (box_style != BOX_TYPE_UNDEFINED) raw->border_type = border_style;
                 }
+
+                case WIDGET_UNDEFINED:
+                default:
+                    break;
             }
         }
 

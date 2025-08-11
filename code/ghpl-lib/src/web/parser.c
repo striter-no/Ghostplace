@@ -22,7 +22,7 @@ void xml_addwidgets(
         cwg->rect.h = app->TERM_HEIGHT;
     }
     
-    for (int i = 0; i < root->childrens_num; i++){
+    for (size_t i = 0; i < root->childrens_num; i++){
         struct Widget *wg = NULL;
         xml_addwidgets(path_to_dir, app, &wg, root->children[i], level + 1);
         
@@ -187,7 +187,6 @@ void init_text(struct tag *tag, struct Widget **out){
     struct Rect rect = {0, 0, -1, -1};
     struct rgb color = {255, 255, 255};
     int style_inx = NO_STYLE;
-    char *content_bytes;
 
     char *class = NULL;
     for (int i = 0; i < tag->attrs_used; i++){
@@ -252,7 +251,7 @@ void init_text(struct tag *tag, struct Widget **out){
         .style = styles[style_inx],
         .unicode_txt = NULL
     };
-    utf8_conv(tag->content, &(((struct Text *)((*out)->wgdata))->unicode_txt));
+    utf8_conv((uint8_t*)tag->content, &(((struct Text *)((*out)->wgdata))->unicode_txt));
     // printf("adding: \"%s\"\n", tag->content);
 }
 

@@ -11,7 +11,7 @@ void request_site(
         .type = GET,
         .conttype = TEXT_CONT,
         .path = NULL,
-        .content = strdup(""),
+        .content = (uint8_t*)strdup(""),
         .cont_size = 1,
         .proto_ver = 0
     };
@@ -44,7 +44,7 @@ void request_site(
     int out = get_get_messages(&enum_msg, &get_msgs, &msgs_size);
     proto_msg_free(&enum_msg);
 
-    printf("[log]{%d} requesting %d messages\n", out, msgs_size);
+    printf("[log]{%d} requesting %ld messages\n", out, msgs_size);
     for (size_t i = 0; i < msgs_size; i++){
         struct qbuffer obuff;
         char path_buffer[150] = {0};
@@ -61,7 +61,7 @@ void request_site(
 
         struct qbuffer ibuff;
         await_pop(&cli->input_queue, &ibuff);
-        printf("[log] got %d message\n", i + 1);
+        printf("[log] got %ld message\n", i + 1);
         
         msgs = (struct proto_msg*)realloc(msgs, sizeof(struct proto_msg) * (++got_msgs));
         proto_deserial(&msgs[i], &ibuff);

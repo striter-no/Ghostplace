@@ -27,7 +27,7 @@ struct Keyboard {
     struct Table pressed_keys;
 };
 
-struct Key keyc(const char *unich);
+struct Key keyc(char *unich);
 struct Key ukeyc(u32 unich);
 struct Key keye(const char *name);
 

@@ -32,12 +32,12 @@ void save_sites_db(
     struct site *inp,
     size_t sites_num,
 
-    const char *main_dirpath
+    char *main_dirpath
 );
 
 void load_sites_db(
     struct site **out,
     size_t *sites_num,
 
-    const char *main_dirpath
+    char *main_dirpath
 );

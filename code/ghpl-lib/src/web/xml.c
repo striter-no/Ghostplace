@@ -91,6 +91,8 @@ void free_tag(struct tag *t) {
     free(t);
 }
 
+static size_t next_uid = 0; 
+
 // Основная функция парсинга
 struct tag* parse_xml(const char *input) {
     if (!input || !*input) return NULL;
@@ -111,14 +113,9 @@ struct tag* parse_xml(const char *input) {
             // Закрывающий тег
             if (*p == '/') {
                 p++;
-                char name_buf[MAX_NAME] = {0};
-                int i = 0;
-                
                 while (*p && *p != '>') {
-                    if (i < MAX_NAME - 1) name_buf[i++] = *p;
                     p++;
                 }
-                name_buf[i] = '\0';
                 p++; // Пропускаем '>'
                 
                 if (stack_top >= 0) {

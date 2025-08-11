@@ -2,20 +2,20 @@
 
 
 // Утилиты для работы со строками (те же, что и в XML-парсере)
-static void trim_whitespace(char *str) {
-    char *end;
+// static void trim_whitespace(char *str) {
+//     char *end;
     
-    // Удаляем начальные пробелы
-    while (isspace((unsigned char)*str)) str++;
+//     // Удаляем начальные пробелы
+//     while (isspace((unsigned char)*str)) str++;
     
-    if (*str == 0) return;
+//     if (*str == 0) return;
     
-    // Удаляем конечные пробелы
-    end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end)) end--;
+//     // Удаляем конечные пробелы
+//     end = str + strlen(str) - 1;
+//     while (end > str && isspace((unsigned char)*end)) end--;
     
-    end[1] = '\0';
-}
+//     end[1] = '\0';
+// }
 
 static size_t safe_strncpy(char *dest, const char *src, size_t size) {
     size_t len = strnlen(src, size - 1);

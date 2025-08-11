@@ -60,6 +60,11 @@ struct WidgetRelp gmargin(enum RELP_ENUM x, enum RELP_ENUM y, f32 v1, f32 v2){
         case M_HCENTER: 
             o.margin_hcenter = v1;
             break;
+        case M_UP:
+        case M_DOWN:
+        case M_VCENTER:
+        default:
+            break;
     }
 
     switch (y){
@@ -71,6 +76,12 @@ struct WidgetRelp gmargin(enum RELP_ENUM x, enum RELP_ENUM y, f32 v1, f32 v2){
             break;
         case M_VCENTER: 
             o.margin_vcenter = v2;
+            break;
+
+        case M_RIGHT:
+        case M_LEFT:
+        case M_HCENTER:
+        default:
             break;
     }
 
@@ -112,22 +123,16 @@ void upd_container_focus(struct tgr_app *app, struct Widget *cont_wg, struct Mou
         .type = BOX_ONE_LINE
     };
 
-    struct Rect r = cont_wg->rect;
-    draw_box(app, &__debug_box, r);
+    draw_box(app, &__debug_box);
 
-    // tgr_pixel(app, (struct rgb){mouse_inside ? 0: 255, 0, mouse_inside ? 255: 0}, mouse->x, mouse->y, 0);
-
-    // Если клик вне контейнера и нажата левая кнопка - сбрасываем фокус
     if (!mouse_inside && mouse->btn != MOUSE_NO_BTN) {
         cont->is_focused = 0;
         return;
     }
     
-    // Если клик внутри контейнера и нажата левая кнопка
     if (mouse_inside && mouse->btn != MOUSE_NO_BTN) {
         // cont->is_focused = true;
 
-        // Проверяем, есть ли дочерний элемент под мышью
         int has_child_under_mouse = 0;
         struct Table *tb = &cont->widgets;
         
@@ -250,6 +255,7 @@ void add_widget(
     ewg.positioning = relp;
     ewg.widget = copy;
 
+    *uid = copy.uid;
     table_add(tb, &copy.uid, &ewg);
 }
 
@@ -353,14 +359,14 @@ struct Rect snap_rect(
     return widget;
 }
 
-void draw_container(struct tgr_app *app, const struct Container *cont, struct Rect rect) {
+void draw_container(struct tgr_app *app, struct Container *cont, struct Rect rect) {
     if (cont->border_mode == 1){ // in
         struct Box box = {
             .color = cont->border_clr,
             .type  = cont->border_type,
             .srect = rect
         };
-        draw_box(app, &box, box.srect);
+        draw_box(app, &box);
     } else if (cont->border_mode == 2){ // out
         struct Box box = {
             .color = cont->border_clr,
@@ -372,7 +378,7 @@ void draw_container(struct tgr_app *app, const struct Container *cont, struct Re
                 rect.h + 2
             }
         };
-        draw_box(app, &box, box.srect);
+        draw_box(app, &box);
     } 
 
     struct Table *tb = &cont->widgets;
@@ -496,7 +502,6 @@ void adjust_rect(
                 rect.h = mx_height;
                 break;
             }
-
             case BOX_WIDGET: {
                 struct Box *bx = widget->wgdata;
                 rect.w = (rect.w == -1) ? bx->srect.w: rect.w;
@@ -504,7 +509,7 @@ void adjust_rect(
                 // printf("%i %i\n", rect.w, rect.h);
                 break;
             }
-
+            case WIDGET_UNDEFINED:
             default: {
                 rect.w = 1;
                 rect.h = 1;
@@ -533,6 +538,10 @@ void free_widget(
             free_container(widget->wgdata);
             break;
         }
+        case BOX_WIDGET:
+        case WIDGET_UNDEFINED:
+        default:
+            break;
     }
 
     free(widget->wgdata);
@@ -557,7 +566,7 @@ void draw_widget(
             break;
         }
         case BOX_WIDGET: {
-            draw_box(app, widg->wgdata, widg->rect);
+            draw_box(app, widg->wgdata);
             break;
         }
         case CONTAINER_WIDGET: {

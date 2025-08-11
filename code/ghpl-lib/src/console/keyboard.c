@@ -59,10 +59,10 @@ struct Key ukeyc(u32 unich){
     return o;
 }
 
-struct Key keyc(const char *unich){
+struct Key keyc(char *unich){
     struct Key o = {0};
     int32_t *i;
-    int res = utf8_conv(unich, &i);
+    int res = utf8_conv((uint8_t*)unich, &i);
     
     o.unich = res != 0 ? 0: i[0];
     free(i);
@@ -163,7 +163,7 @@ byte is_key_pressed(struct Keyboard *kb, struct Key key){
     // If key in table
     // remove key
     struct Table *tb = &kb->pressed_keys;
-    printf("\n%u\n", tb->size);
+    printf("\n%lu\n", tb->size);
     abort();
     for (u64 i = 0; i < tb->size; i++){
         struct Key tmpk;

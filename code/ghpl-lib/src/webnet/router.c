@@ -1,20 +1,19 @@
 #include <ghpl/webnet/router.h>
 
-static size_t strinx(const char *str, const char *tofind) {
-    if (!str || !tofind) return (size_t)-1; // проверка на NULL
+// static size_t strinx(const char *str, const char *tofind) {
+//     if (!str || !tofind) return (size_t)-1; // проверка на NULL
     
-    for (size_t i = 0; str[i] != '\0'; i++) {
-        size_t j = 0;
-        while (tofind[j] != '\0' && str[i + j] == tofind[j]) {
-            j++;
-        }
-        if (tofind[j] == '\0') {
-            return i;
-        }
-    }
-    return (size_t)-1;
-}
-
+//     for (size_t i = 0; str[i] != '\0'; i++) {
+//         size_t j = 0;
+//         while (tofind[j] != '\0' && str[i + j] == tofind[j]) {
+//             j++;
+//         }
+//         if (tofind[j] == '\0') {
+//             return i;
+//         }
+//     }
+//     return (size_t)-1;
+// }
 
 void *__router_detached_tcp(void *args){
     struct TCP_server *serv = (struct TCP_server *)args;
@@ -57,7 +56,7 @@ void run_router(struct router *router, void (*router_calllback)(struct qbuffer *
     while (router->server.running){
         pthread_mutex_lock(&serv->climtx);
 
-        for (size_t i = 0; i < serv->act_clients_n; i++){
+        for (ssize_t i = 0; i < serv->act_clients_n; i++){
             struct __TCP_serv_cli *cli = &serv->clients[i];
             struct qbuffer ibuff, obuff;
 
@@ -83,7 +82,7 @@ void save_sites_db(
     struct site *inp,
     size_t sites_num,
 
-    const char *main_dirpath
+    char *main_dirpath
 ){
     for (size_t i = 0; i < sites_num; i++){
         save_site(&inp[i], main_dirpath);
@@ -94,7 +93,7 @@ void load_sites_db(
     struct site **out,
     size_t *sites_num,
 
-    const char *main_dirpath
+    char *main_dirpath
 ){
     char **dirs = NULL;
     size_t dir_num = enum_directories(main_dirpath, &dirs);

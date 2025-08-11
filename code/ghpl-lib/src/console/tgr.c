@@ -2,7 +2,7 @@
 
 int __TGR_MTB_CTRL_C_PRESSED = 0;
 
-void __tgr_ctrl_c_handler(int signum){
+void __tgr_ctrl_c_handler(){
     __sync_fetch_and_add(&__TGR_MTB_CTRL_C_PRESSED, 1);
 }
 
@@ -51,8 +51,8 @@ void tgr_run(
 ){
     srand(time(NULL));
     signal(SIGINT, __tgr_ctrl_c_handler);
-    term_write("\033[?1049h", 8); // Change console screen
-    term_write("\033[?25l", 6); // Hide cursor
+    term_write((int8_t*)"\033[?1049h", 8); // Change console screen
+    term_write((int8_t*)"\033[?25l", 6); // Hide cursor
 
     pthread_t hid_thread;
     pthread_create(&hid_thread, NULL, __thread_tgr_inp_handler, (void *)app);
@@ -90,7 +90,7 @@ void tgr_run(
         if (!app->__frame_changed)
             goto __tgr_upd_end;
 
-        term_write("\033[H", 3);
+        term_write((int8_t*)"\033[H", 3);
         size_t allbuff_s = 0;
         char *allbytes = NULL;
         for (u64 y = 0; y < app->TERM_HEIGHT; y++){
@@ -123,7 +123,7 @@ void tgr_run(
             } 
 
             char cursor_cmd[25] = {0};
-            int cursor_len = sprintf(cursor_cmd, "\033[%d;%dH", y + 1, sx + 1);
+            sprintf(cursor_cmd, "\033[%ld;%ldH", y + 1, sx + 1);
             allbytes = (char*)realloc(allbytes, allbuff_s + strlen(cursor_cmd));
             memcpy(allbytes + allbuff_s, cursor_cmd, strlen(cursor_cmd));
             allbuff_s += strlen(cursor_cmd);
@@ -202,7 +202,7 @@ void tgr_run(
         }
 
         
-        term_write(allbytes, allbuff_s);
+        term_write((int8_t*)allbytes, allbuff_s);
         free(allbytes);
         app->__frame_changed = 0;
 
@@ -232,8 +232,8 @@ void tgr_run(
     }
     pthread_join(hid_thread, NULL);
 
-    term_write("\033[?25h", 6);
-    term_write("\033[?1049l", 8); // Restore console screen
+    term_write((int8_t*)"\033[?25h", 6);
+    term_write((int8_t*)"\033[?1049l", 8); // Restore console screen
 }
 
 void tgr_init(
@@ -261,14 +261,14 @@ void tgr_init(
     app->pix_displ = (struct pixel*)malloc(size);
 
     if (app->pix_displ == NULL){
-        fprintf(stderr, "tgr_init:malloc(1):failed for %d bytes", size);
+        fprintf(stderr, "tgr_init:malloc(1):failed for %ld bytes", size);
         abort();
     }
 
     app->last_px_displ = (struct pixel*)malloc(size);
 
     if (app->last_px_displ == NULL){
-        fprintf(stderr, "tgr_init:malloc(1):failed for %d bytes", size);
+        fprintf(stderr, "tgr_init:malloc(1):failed for %ld bytes", size);
         abort();
     }
 
@@ -403,7 +403,7 @@ byte px_in_bounds(
     struct tgr_app *app,
     i64 x, i64 y
 ){
-    return x >= 0 && x < app->TERM_WIDTH && y >= 0 && y < app->TERM_HEIGHT; 
+    return x >= 0 && (size_t)x < app->TERM_WIDTH && y >= 0 && (size_t)y < app->TERM_HEIGHT; 
 }
 
 void tgr_tpix_set(

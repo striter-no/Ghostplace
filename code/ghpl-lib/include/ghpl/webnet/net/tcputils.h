@@ -1,4 +1,5 @@
 #pragma once
+#include <strings.h>
 #include <netinet/in.h> 
 #include <stdlib.h> 
 #include <sys/socket.h> 

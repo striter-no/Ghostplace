@@ -75,3 +75,28 @@ cd ./Ghostplace
 ./code/scripts/supdate gcc-14 # Или любой другой GCC
 ./code/scripts/run router IP PORT
 ```
+
+### Замечание для пользователей Termux
+
+Для нормальной сборки вам будет необходимо установить библиотеки lua или удалить их из билд скриптов. Также для сборки `libutf8proc` вам нужен пакет `binutils` для команды `ar`. 
+
+Если у вас проект собирает clang, а не gcc, то вам необходимо изменить многострочную структуру билд-скриптов с:
+
+```sh
+# ...
+$CC -pedantic -Wall -Wextra -O3 -o "$EXEC_NAME" \
+    ./code/"$EXEC_NAME".c \
+    $SRC_FILES \
+    -I ./code/ghpl-lib/include \
+    -L ./code/ghpl-lib/lib \
+    -lm -lutf8proc -lpthread -llua5.4 -ldl
+# ...
+```
+
+на однострочную версию:
+
+```sh
+# ...
+$CC -pedantic -Wall -Wextra -O3 -o "$EXEC_NAME" ./code/"$EXEC_NAME".c $SRC_FILES -I ./code/ghpl-lib/include -L ./code/ghpl-lib/lib -lm -lutf8proc -lpthread -llua5.4 -ldl
+# ...
+```

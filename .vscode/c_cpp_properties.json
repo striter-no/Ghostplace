@@ -3,7 +3,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/code/ghpl-lib/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang-18",

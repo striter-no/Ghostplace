@@ -19,10 +19,10 @@
 ```sh
 git clone https://github.com/striter-no/Ghostplace
 cd ./Ghostplace
-./scripts/cinstall
+./code/scripts/cinstall
 
-./scripts/rbuild client gcc-14 # Или любой другой GCC компилятор
-./scripts/run client IP PORT # Запуск клиента. Укажите реальные IP и PORT роутера
+./code/scripts/rbuild client gcc-14 # Или любой другой GCC компилятор
+./code/scripts/run client IP PORT # Запуск клиента. Укажите реальные IP и PORT роутера
 ```
 
 Для создания и отправки вашего сайта на роутер
@@ -38,13 +38,15 @@ touch index.ghml # Сюда что-нибудь напишите
 touch styles.gss # и сюда
 # пример сайта в ./assets/sites/ghost.main
 
+python -m venv venv
 source ./venv/bin/activate
+pip install -r ./code/py/requirements.txt
 
 # Чтобы добавить сайт (внимание на порты для добавления)
-python ./cli_upload_site.py your.site.com http://router.ip:upl_port
+python ./code/py/cli_upload_site.py your.site.com http://router.ip:upl_port
 
 # Далее тут будет ваш API ключ, поэтому при следующих запросах делайте так:
-python ./cli_upload_site.py your.site.com http://router.ip:upl_port your-uuid4-api-key
+python ./code/py/cli_upload_site.py your.site.com http://router.ip:upl_port your-uuid4-api-key
 
 # Для отключения venv
 deactivate
@@ -56,13 +58,13 @@ deactivate
 git clone https://github.com/striter-no/Ghostplace
 cd ./Ghostplace
 
-./scripts/sdeploy gcc-14 # Или любой другой GCC
-./scripts/run router IP PORT # Для запуска (укажите реальные IP и PORT для привязки роутера)
+./code/scripts/sdeploy gcc-14 # Или любой другой GCC
+./code/scripts/run router IP PORT # Для запуска (укажите реальные IP и PORT для привязки роутера)
 ```
 
 Для того, чтобы не скачивать каждый раз по новой репозиторий для обновления есть скрипт `supdate`:
 
 ```sh
-./scripts/supdate gcc-14 # Или любой другой GCC
-./scripts/run router IP PORT
+./code/scripts/supdate gcc-14 # Или любой другой GCC
+./code/scripts/run router IP PORT
 ```

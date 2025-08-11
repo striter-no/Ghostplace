@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <executable_name> [compiler]"
+    echo "Example: $0 router gcc"
+    exit 1
+fi
+
+EXEC_NAME=$1
+CC=${2:-gcc}
+
+reset
+SRC_FILES=$(find ./code/ghpl-lib/src -type f -name "*.c")
+
+$CC -fsanitize=address -fno-omit-frame-pointer -pedantic -Wall -Wextra -g -o "$EXEC_NAME" \
+    ./code/"$EXEC_NAME".c \
+    $SRC_FILES \
+    -I ./code/ghpl-lib/include \
+    -lm -lutf8proc -lpthread
+
+if [ $? -eq 0 ]; then
+    echo -e "\033[1;32mCompilation successful!\033[0m"
+    mv "$EXEC_NAME" ./bin/
+    echo "Executable moved to ./bin/$EXEC_NAME"
+else
+    echo -e "\033[1;31mCompilation failed!\033[0m"
+    exit 1
+fi

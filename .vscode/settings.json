@@ -39,7 +39,10 @@
         "site.h": "c",
         "tcpcli.h": "c",
         "keyboard.h": "c",
-        "router.h": "c"
+        "router.h": "c",
+        "term.h": "c",
+        "cssparser.h": "c",
+        "ghcli.h": "c"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/clang-18"
 }

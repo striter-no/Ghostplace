@@ -1,7 +1,0 @@
-#!/bin/bash
-
-git reset --hard
-git fetch
-git merge origin/main
-
-./scripts/rbuild router "$1"

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+git clone https://github.com/striter-no/Ghostplace
+cd ./Ghostplace
+
+
+# Для тех, у кого нет utf8proc
+if ! find /usr/local/lib /usr/lib /lib -type f -name 'libutf8proc*' -print -quit | grep -q .; then
+    wget https://github.com/JuliaStrings/utf8proc/releases/download/v2.10.0/utf8proc-2.10.0.tar.gz
+    tar -xf ./utf8proc-2.10.0.tar.gz
+    rm -f ./utf8proc-2.10.0.tar.gz
+
+    cd ./utf8proc*
+    make
+    make install # Делает make install в /usr/local/lib, так что добавьте в пути к компилятору, если у вас он оттуда не берет
+
+    cd ..
+fi
+mkdir -p bin
+
+cd ./code/py
+python -m venv venv
+source ./venv/bin/activate
+pip install -r ./requirements.txt
+deactivate
+cd -

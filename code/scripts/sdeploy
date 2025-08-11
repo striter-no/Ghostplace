@@ -9,7 +9,8 @@ if ! find /usr/local/lib /usr/lib /lib -type f -name 'libutf8proc*' -print -quit
     # build utf8proc
     cd ./utf8proc*
     make
-    make install
+    mv ./libutf8proc.so* ../code/ghpl-lib/lib
+    mv ./libutf8proc.a*  ../code/ghpl-lib/lib
 
     # building server
     cd ..

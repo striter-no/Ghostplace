@@ -16,6 +16,7 @@ $CC -pedantic -Wall -Wextra -g -o "$EXEC_NAME" \
     ./code/"$EXEC_NAME".c \
     $SRC_FILES \
     -I ./code/ghpl-lib/include \
+    -L ./code/ghpl-lib/lib \
     -lm -lutf8proc -lpthread -llua5.4 -ldl
 
 if [ $? -eq 0 ]; then

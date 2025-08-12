@@ -6,8 +6,11 @@
 #include <ghpl/web/cssparser.h>
 #include <ghpl/webnet/ghcli.h>
 
+#include <ghpl/scripting/lua/lua.h>
+
 char *site_domain = NULL;
 
+static lua_State *state = NULL;
 struct Widget *main_cnt = NULL;
 static struct Keyboard kb;
 static struct Mouse mouse;
@@ -17,7 +20,8 @@ int  router_port = 9000;
 
 void *detached(void *args);
 void update(struct tgr_app *app);
-int update_to_site(struct tgr_app *app, const char *domain_name);
+int update_to_cached(struct tgr_app *app, char *domain_name, char ***script_paths, size_t *scripts_n);
+int update_to_site(struct tgr_app *app, char *domain_name, char ***script_paths, size_t *scripts_n);
 
 int main(int argc, char *argv[]){
     // TUI INIT
@@ -50,13 +54,32 @@ int main(int argc, char *argv[]){
     mouse = (struct Mouse){0};
     create_kboard(&kb);
 
-    update_to_site(&app, "ghost.main");
+    char **script_paths = NULL; size_t scripts_n = 0;
+    update_to_cached(&app, "ghost.main", &script_paths, &scripts_n);
 
     // RUN ===================
-    enable_mouse(MOUSE_NORMAL_TRACKING);
+
+    init_lua(&state);
+    
+    for (size_t i = 0; i < scripts_n; i++){
+        char *name = basepath(script_paths[i]);
+
+        if (strcmp(name, "main.lua") == 0){
+            init_script(state, script_paths[i]);
+            free(name);
+            break;
+        }
+        free(name);
+    }
+
+    func_on_init(state);
+
+    enable_mouse(MOUSE_BUTTONS_TRACKING);
     tgr_run(&app, update);
     tgr_end(&app);
-    disable_mouse(MOUSE_NORMAL_TRACKING);
+    disable_mouse(MOUSE_BUTTONS_TRACKING);
+
+    end_lua(state);
 
     // END ===================
     if (main_cnt){
@@ -67,7 +90,54 @@ int main(int argc, char *argv[]){
     free_keyboard(&kb);    
 }
 
-int update_to_site(struct tgr_app *app, const char *domain_name){
+int update_to_cached(struct tgr_app *app, char *domain_name, char ***script_paths, size_t *scripts_n){
+    char site[1024] = ".tmp_sites/";
+    strcat(site, domain_name);
+
+    if (fileexists(site)){
+        struct site osite;
+        load_site(&osite, ".tmp_sites", domain_name);
+        
+        struct css_block *css_blocks = parse_css(osite.gss_content);
+    
+        if (!css_blocks) {
+            destroy_site(&osite);
+            printf("Failed to parse GSS\n");
+            return 1;
+        }
+        
+        struct tag *xml_root = parse_xml(osite.ghml_content);
+        if (!xml_root) {
+            destroy_site(&osite);
+            printf("Failed to parse GHML\n");
+            return 2;
+        }
+
+        *scripts_n = osite.scripts_n;
+        *script_paths = malloc(osite.scripts_n * sizeof(char*));
+        for (size_t i = 0; i < osite.scripts_n; i++){
+            char full_path[1024] = {0};
+            strcat(full_path, site);
+            strcat(full_path, "/scripts/");
+            strcat(full_path, osite.scripts[i].name);
+            
+            (*script_paths)[i] = malloc(strlen(full_path) + 1);
+            strcpy((*script_paths)[i], full_path);
+        }
+
+        destroy_site(&osite);
+
+        xml_addwidgets(site, app, &main_cnt, xml_root, 0);
+        css_parsewidgets(&main_cnt, css_blocks);
+        free_tag(xml_root);
+        free_css(css_blocks);
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+int update_to_site(struct tgr_app *app, char *domain_name, char ***script_paths, size_t *scripts_n){
     struct TCP_client tcpcli;
 
     // TCP INIT
@@ -89,27 +159,7 @@ int update_to_site(struct tgr_app *app, const char *domain_name){
 
     save_site(&site, ".tmp_sites");
 
-    struct css_block *css_blocks = parse_css(site.gss_content);
-    
-    if (!css_blocks) {
-        destroy_site(&site);
-        printf("Failed to parse GSS\n");
-        return 1;
-    }
-    
-    struct tag *xml_root = parse_xml(site.ghml_content);
-    if (!xml_root) {
-        destroy_site(&site);
-        printf("Failed to parse GHML\n");
-        return 2;
-    }
-
-    destroy_site(&site);
-    // ===================
-    xml_addwidgets(tmp_site_name, app, &main_cnt, xml_root, 0);
-    css_parsewidgets(&main_cnt, css_blocks);
-    free_tag(xml_root);
-    free_css(css_blocks);
+    update_to_cached(app, domain_name, script_paths, scripts_n);
 
     // TCP end
     tcp_cli_disconn(&tcpcli);
@@ -133,7 +183,7 @@ void update(struct tgr_app *app){
             if (key_cmp(key, keye("ctrl + f"))){
                 is_in_search = !is_in_search;
             } else if (is_in_search && key_cmp(key, keye("enter"))){
-                update_to_site(app, site_domain);
+                // update_to_site(app, site_domain);
                 
                 
                 free(site_domain);
@@ -156,6 +206,7 @@ void update(struct tgr_app *app){
         clear_qbuffer(&buffer);
     }
 
+    func_on_tick(state, app->deltaTime * 1000);
 
     // WIDGETS =======================
     if (main_cnt){
@@ -178,7 +229,9 @@ void update(struct tgr_app *app){
             free(unistr);
         }
     }
-
+    
+    tgr_pixel(app, (struct rgb){255, 0, 255}, mouse.x, mouse.y, 1);
+    
     // FPS =======================
     char fpsbuff[60];
     sprintf(fpsbuff, "%ldx%ld\n%d", app->TERM_WIDTH, app->TERM_HEIGHT, app->fps);

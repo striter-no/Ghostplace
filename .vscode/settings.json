@@ -58,6 +58,6 @@
     ],
     "editor.suggest.snippetsPreventQuickSuggestions": false,
     "editor.codeActionsOnSave": {
-        "source.organizeIncludes": true
+        "source.organizeIncludes": "explicit"
     }
 }

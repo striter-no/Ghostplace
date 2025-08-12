@@ -9,12 +9,20 @@ struct site_asset {
     size_t cont_len;
 };
 
+struct site_script {
+    char *name;
+    char *content;
+};
+
 struct site {
     char *domain_name;
     
     char *ghml_content;
     char *gss_content;
     byte has_gss;
+
+    struct site_script *scripts;
+    size_t scripts_n;
 
     struct site_asset *assets;
     size_t assets_n;
@@ -81,4 +89,8 @@ void destroy_site(
 
 void destroy_asset(
     struct site_asset *asset
+);
+
+void destroy_script(
+    struct site_script *script
 );

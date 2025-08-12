@@ -17,11 +17,11 @@ void save_site(
     mkdir_p(fullpath, 0755);
     strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name), "/index.ghml");
     
-    writefile(fullpath, "w", (uint8_t*)site->ghml_content, strlen(site->ghml_content) + 1);
+    writefile(fullpath, "w", (uint8_t*)site->ghml_content, strlen(site->ghml_content));
     fullpath[strlen(dirpath) + 1 + strlen(site->domain_name)] = '\0';
     if (site->has_gss){
         strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name), "/styles.gss");
-        writefile(fullpath, "w", (uint8_t*)site->gss_content, strlen(site->gss_content) + 1);
+        writefile(fullpath, "w", (uint8_t*)site->gss_content, strlen(site->gss_content));
     }
     
     fullpath[strlen(dirpath) + 1 + strlen(site->domain_name)] = '\0';
@@ -36,6 +36,20 @@ void save_site(
         // !*printf("[log] asset path: %s\n", fullpath);
 
         writefile(fullpath, "wb", asset->content, asset->cont_len);
+    }
+
+    fullpath[strlen(dirpath) + 1 + strlen(site->domain_name)] = '\0';
+    strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name), "/scripts");
+    mkdir(fullpath, 0755);
+    for (size_t i = 0; i < site->scripts_n; i++){
+        struct site_script *script = &site->scripts[i];
+
+        fullpath[strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/scripts")] = '/';
+        fullpath[strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/scripts") + 1] = '\0';
+        strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/scripts"), script->name);
+        // !*printf("[log] script path: %s\n", fullpath);
+
+        writefile(fullpath, "w", (uint8_t*)script->content, 1 + strlen(script->content));
     }
 
     free(fullpath);
@@ -84,8 +98,8 @@ int load_site(
     fullpath[strlen(main_dirpath) + 1 + strlen(site_domain)] = '\0';
     strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain), "/assets");
     
-    char **file_names = NULL;
-    size_t assets_n = enum_files(fullpath, &file_names);
+    char **assets_names = NULL;
+    size_t assets_n = enum_files(fullpath, &assets_names);
     
     struct site_asset *assets = (struct site_asset*)malloc(sizeof(struct site_asset) * assets_n);
     if (assets == NULL){
@@ -95,17 +109,43 @@ int load_site(
 
     for (size_t i = 0; i < assets_n; i++){
         assets[i].type = IMAGE_CONT;
-        assets[i].name = strdup(file_names[i]);
+        assets[i].name = strdup(assets_names[i]);
 
         
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets")] = '/';
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets") + 1] = '\0';
-        strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets"), file_names[i]);
+        strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets"), assets_names[i]);
         // !*printf("[log] asset path: %s\n", fullpath);
         readfile(fullpath, "rb", &assets[i].content, &assets[i].cont_len);
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets")] = '\0';
     }
-    free_list_cstr(file_names, assets_n);
+    free_list_cstr(assets_names, assets_n);
+
+    fullpath[strlen(main_dirpath) + 1 + strlen(site_domain)] = '\0';
+    strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain), "/scripts");
+    
+    char **scripts_names = NULL;
+    size_t scripts_n = enum_files(fullpath, &scripts_names);
+    
+    struct site_script *scripts = (struct site_script*)malloc(sizeof(struct site_script) * scripts_n);
+    if (scripts == NULL){
+        free(fullpath);
+        return -3;
+    }
+
+    for (size_t i = 0; i < scripts_n; i++){
+        scripts[i].name = strdup(scripts_names[i]);
+
+        
+        fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/scripts")] = '/';
+        fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/scripts") + 1] = '\0';
+        strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/scripts"), scripts_names[i]);
+        
+        size_t len = 0;
+        readfile(fullpath, "r", (uint8_t**)&scripts[i].content, &len);
+        fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/scripts")] = '\0';
+    }
+    free_list_cstr(scripts_names, scripts_n);
 
     site->domain_name = strdup(site_domain);
     site->ghml_content = ghml_content;
@@ -113,6 +153,8 @@ int load_site(
     site->has_gss = gss_content != NULL;
     site->assets = assets;
     site->assets_n = assets_n;
+    site->scripts = scripts;
+    site->scripts_n = scripts_n;
     free(fullpath);
 
     return 0;
@@ -164,7 +206,9 @@ int decompose_site(
     char was_ghml = 0;
     char was_gss = 0;
     int  num_assets = 0;
+    int  num_scripts = 0;
     struct site_asset *assets = NULL;
+    struct site_script *scripts = NULL;
 
     for (size_t i = 0; i < msgs_size; i++){
         struct proto_msg *msg = &msgs[i];
@@ -202,6 +246,15 @@ int decompose_site(
             asset->content = (uint8_t *)malloc(msg->cont_size);
             memcpy(asset->content, msg->content, msg->cont_size);
         }
+
+        if (str_startsw(msg->path, "scripts/")){
+            scripts = (struct site_script *)realloc(scripts, sizeof(struct site_script) * (++num_scripts));
+            struct site_script *script = &scripts[num_scripts - 1];
+            
+            script->name = basepath(msg->path);
+            script->content = (char*)malloc(msg->cont_size);
+            memcpy(script->content, msg->content, msg->cont_size);
+        }
     }
 
     if (!was_ghml){
@@ -212,6 +265,10 @@ int decompose_site(
 
     site->assets = assets;
     site->assets_n = num_assets;
+
+    site->scripts = scripts;
+    site->scripts_n = num_scripts;
+
     site->has_gss = was_gss;
     site->domain_name = strdup("undef");
 
@@ -236,6 +293,15 @@ void compose_enum(
     for (size_t i = 0; i < site->assets_n; i++){
         char lbuff[200] = "assets/";
         strcat(lbuff, site->assets[i].name);
+        size_t old_size = strlen(lbuff);
+        lbuff[old_size] = '\n';
+        lbuff[old_size + 1] = '\0';
+        smart_strcat((char**)&msg->content, lbuff);
+    }
+
+    for (size_t i = 0; i < site->assets_n; i++){
+        char lbuff[200] = "scripts/";
+        strcat(lbuff, site->scripts[i].name);
         size_t old_size = strlen(lbuff);
         lbuff[old_size] = '\n';
         lbuff[old_size + 1] = '\0';
@@ -332,6 +398,26 @@ int compose_by_path(
         return -5;
     }
 
+    if (strcmp(tokens[0], "scripts") == 0){
+        if (site->scripts_n == 0){
+            free_list_cstr(tokens, ntoks);
+            return -4;
+        }
+        
+        for (size_t i = 0; i < site->scripts_n; i++){
+            if (strcmp(site->scripts[i].name, tokens[1]) == 0){
+                struct site_script *script = &site->scripts[i];
+                set_proto_content(msg, (uint8_t*)script->content, 1 + strlen(script->content));
+                
+                free_list_cstr(tokens, ntoks);
+                return 0;
+            }
+        }
+        
+        free_list_cstr(tokens, ntoks);
+        return -5;
+    }
+
     free_list_cstr(tokens, ntoks);
     return -2;
 }
@@ -354,6 +440,10 @@ void destroy_site(
         destroy_asset(&site->assets[i]);
     free(site->assets);
 
+    for (size_t i = 0; i < site->scripts_n; i++)
+        destroy_script(&site->scripts[i]);
+    free(site->scripts);
+
     free(site->gss_content);
     free(site->ghml_content);
     free(site->domain_name);
@@ -369,4 +459,13 @@ void destroy_asset(
     free(asset->content);
     asset->name = 0;
     asset->content = 0;
+}
+
+void destroy_script(
+    struct site_script *script
+){
+    free(script->name);
+    free(script->content);
+    script->name = 0;
+    script->content = 0;
 }

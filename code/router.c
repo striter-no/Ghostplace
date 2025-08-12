@@ -1,4 +1,6 @@
-#include <webnet/router.h>
+#include <ghpl/webnet/router.h>
+#include <ghpl/utils/strutils.h>
+#include <string.h>
 
 #define UPD_SECONDS_DELAY 60 * 60
 
@@ -18,7 +20,7 @@ void callback(
         out_msg = (struct proto_msg){
             .type = GET,
             .path = strdup("/"),
-            .content = strdup("proto-err"),
+            .content = (uint8_t*)strdup("proto-err"),
             .cont_size = strlen("proto-err") + 1,
             .conttype = TEXT_CONT,
             .proto_ver = 0
@@ -37,7 +39,7 @@ void callback(
         out_msg = (struct proto_msg){
             .type = GET,
             .path = strdup("/"),
-            .content = strdup("proto-err"),
+            .content = (uint8_t*)strdup("proto-err"),
             .cont_size = strlen("proto-err") + 1,
             .conttype = TEXT_CONT,
             .proto_ver = 0
@@ -49,7 +51,7 @@ void callback(
         return;
     }
 
-    const char *domain = tokens[0];
+    char *domain = tokens[0];
     char *real_path = malloc(strlen(inp_msg.path) - strlen(domain) + 2);
     strcpy(real_path, inp_msg.path + strlen(domain));
     free(inp_msg.path);

@@ -1,4 +1,0 @@
--- global markup space
-GMS = {
-    
-}

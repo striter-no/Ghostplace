@@ -49,7 +49,7 @@ void save_site(
         strcat(fullpath + strlen(dirpath) + 1 + strlen(site->domain_name) + strlen("/scripts"), script->name);
         // !*printf("[log] script path: %s\n", fullpath);
 
-        writefile(fullpath, "w", (uint8_t*)script->content, 1 + strlen(script->content));
+        writefile(fullpath, "w", (uint8_t*)script->content, strlen(script->content));
     }
 
     free(fullpath);
@@ -100,9 +100,10 @@ int load_site(
     
     char **assets_names = NULL;
     size_t assets_n = enum_files(fullpath, &assets_names);
-    
+    printf("[log] assets path: %s (%zu files)\n", fullpath, assets_n);
+
     struct site_asset *assets = (struct site_asset*)malloc(sizeof(struct site_asset) * assets_n);
-    if (assets == NULL){
+    if (assets == NULL && assets_n != 0){
         free(fullpath);
         return -3;
     }
@@ -119,16 +120,18 @@ int load_site(
         readfile(fullpath, "rb", &assets[i].content, &assets[i].cont_len);
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/assets")] = '\0';
     }
-    free_list_cstr(assets_names, assets_n);
+    if (assets_names)
+        free_list_cstr(assets_names, assets_n);
 
     fullpath[strlen(main_dirpath) + 1 + strlen(site_domain)] = '\0';
     strcat(fullpath + strlen(main_dirpath) + 1 + strlen(site_domain), "/scripts");
     
     char **scripts_names = NULL;
     size_t scripts_n = enum_files(fullpath, &scripts_names);
+    printf("[log] scripts path: %s (%zu files)\n", fullpath, scripts_n);
     
     struct site_script *scripts = (struct site_script*)malloc(sizeof(struct site_script) * scripts_n);
-    if (scripts == NULL){
+    if (scripts == NULL && scripts_n != 0){
         free(fullpath);
         return -3;
     }
@@ -145,7 +148,8 @@ int load_site(
         readfile(fullpath, "r", (uint8_t**)&scripts[i].content, &len);
         fullpath[strlen(main_dirpath) + 1 + strlen(site_domain) + strlen("/scripts")] = '\0';
     }
-    free_list_cstr(scripts_names, scripts_n);
+    if (scripts_names)
+        free_list_cstr(scripts_names, scripts_n);
 
     site->domain_name = strdup(site_domain);
     site->ghml_content = ghml_content;
@@ -252,8 +256,7 @@ int decompose_site(
             struct site_script *script = &scripts[num_scripts - 1];
             
             script->name = basepath(msg->path);
-            script->content = (char*)malloc(msg->cont_size);
-            memcpy(script->content, msg->content, msg->cont_size);
+            script->content = strdup((char*)msg->content);
         }
     }
 
@@ -299,7 +302,7 @@ void compose_enum(
         smart_strcat((char**)&msg->content, lbuff);
     }
 
-    for (size_t i = 0; i < site->assets_n; i++){
+    for (size_t i = 0; i < site->scripts_n; i++){
         char lbuff[200] = "scripts/";
         strcat(lbuff, site->scripts[i].name);
         size_t old_size = strlen(lbuff);

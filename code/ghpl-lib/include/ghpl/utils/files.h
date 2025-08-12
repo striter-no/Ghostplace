@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 size_t enum_directories(const char *path, char ***dirs);
 size_t enum_files(const char *path, char ***files);
@@ -16,5 +17,6 @@ char fileexists(const char *path);
 
 void path_sanitize(char *path);
 char *basepath(const char *path);
+int remove_directory(const char *path);
 
 void free_list_cstr(char **dirs, size_t count);

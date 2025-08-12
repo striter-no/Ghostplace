@@ -317,3 +317,26 @@ char fileexists(const char *path) {
 
     return 0;
 }
+
+int remove_directory(const char *path) {
+    DIR *dir = opendir(path);
+    if (!dir) return -1;
+
+    struct dirent *entry;
+    char filepath[1024];
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+            continue;
+
+        snprintf(filepath, sizeof(filepath), "%s/%s", path, entry->d_name);
+
+        struct stat statbuf;
+        if (stat(filepath, &statbuf) == 0 && S_ISDIR(statbuf.st_mode)) {
+            remove_directory(filepath);  // рекурсивно
+        } else {
+            remove(filepath);  // обычный файл
+        }
+    }
+    closedir(dir);
+    return rmdir(path);  // удаляем саму папку
+}

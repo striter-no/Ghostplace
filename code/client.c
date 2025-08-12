@@ -55,7 +55,7 @@ int main(int argc, char *argv[]){
     create_kboard(&kb);
 
     char **script_paths = NULL; size_t scripts_n = 0;
-    update_to_cached(&app, "ghost.main", &script_paths, &scripts_n);
+    update_to_site(&app, "ghost.main", &script_paths, &scripts_n);
 
     // RUN ===================
 
@@ -157,6 +157,10 @@ int update_to_site(struct tgr_app *app, char *domain_name, char ***script_paths,
     sprintf(tmp_site_name, ".tmp_sites/%s", domain_name);
     // **printf("[log] tmp site name: %s\n", tmp_site_name);
 
+    if (fileexists(tmp_site_name)){
+        printf("[log] removing cached version\n");
+        remove_directory(tmp_site_name);
+    }
     save_site(&site, ".tmp_sites");
 
     update_to_cached(app, domain_name, script_paths, scripts_n);

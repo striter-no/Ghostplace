@@ -6,4 +6,4 @@ valgrind \
     --leak-check=full \
     --show-leak-kinds=all \
     --track-origins=yes \
-    --suppressions=./scripts/valgrind.supp ./bin/"$1" "${@:2}"
+    --suppressions=./code/scripts/valgrind.supp ./bin/"$1" "${@:2}"

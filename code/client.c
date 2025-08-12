@@ -7,10 +7,12 @@
 #include <ghpl/webnet/ghcli.h>
 
 #include <ghpl/scripting/lua/lua.h>
+#include <ghpl/scripting/lua/event.h>
+#include <ghpl/scripting/lua/debug.h>
 
 char *site_domain = NULL;
 
-static lua_State *state = NULL;
+static struct ScriptingContext scontext;
 struct Widget *main_cnt = NULL;
 static struct Keyboard kb;
 static struct Mouse mouse;
@@ -59,27 +61,28 @@ int main(int argc, char *argv[]){
 
     // RUN ===================
 
-    init_lua(&state);
+    init_lua(&scontext);
     
     for (size_t i = 0; i < scripts_n; i++){
         char *name = basepath(script_paths[i]);
 
         if (strcmp(name, "main.lua") == 0){
-            init_script(state, script_paths[i]);
+            init_script(&scontext, script_paths[i]);
             free(name);
             break;
         }
         free(name);
     }
 
-    func_on_init(state);
+    register_intlog(&scontext, &app);
+    func_on_init(&scontext);
 
     enable_mouse(MOUSE_BUTTONS_TRACKING);
     tgr_run(&app, update);
     tgr_end(&app);
     disable_mouse(MOUSE_BUTTONS_TRACKING);
 
-    end_lua(state);
+    end_lua(&scontext);
 
     // END ===================
     if (main_cnt){
@@ -88,6 +91,7 @@ int main(int argc, char *argv[]){
     }
 
     free_keyboard(&kb);    
+    debug_cleanup();
 }
 
 int update_to_cached(struct tgr_app *app, char *domain_name, char ***script_paths, size_t *scripts_n){
@@ -174,17 +178,35 @@ int update_to_site(struct tgr_app *app, char *domain_name, char ***script_paths,
 
 void update(struct tgr_app *app){
     static char is_in_search = 0;
+    static char is_in_debug  = 0;
     mouse.scroll_h = 0;
+    mouse.btn = MOUSE_NO_BTN;
 
     struct qbuffer buffer;
     if (0 == pop_buffer(&app->inp_queue, &buffer)){
         process_mouse(&mouse, (int8_t*)buffer.bytes, buffer.size);
+        
+        if (mouse.btn != MOUSE_NO_BTN){
+            struct LuaSEvent event = constr_event(MOUSE_EVENT);
+            event.mouse_x = mouse.x;
+            event.mouse_y = mouse.y;
+            event.btn = (i16)mouse.btn;
+
+            event.shifted = mouse.shifted;
+            event.alted = mouse.alted;
+            event.ctrled = mouse.ctrled;
+
+            if(!is_in_debug) lua_event_trigger(&scontext, &event);
+        }
+        
         // CTRL + F to go to some site
         char has_kbi = kb_process_input(&kb, buffer.bytes, buffer.size);
         if (has_kbi){
             struct Key key;
             get_pressed_key(&kb, &key);
-            if (key_cmp(key, keye("ctrl + f"))){
+            if (key_cmp(key, keye("f4"))){
+                is_in_debug = !is_in_debug;
+            } else if (key_cmp(key, keye("ctrl + f"))){
                 is_in_search = !is_in_search;
             } else if (is_in_search && key_cmp(key, keye("enter"))){
                 // update_to_site(app, site_domain);
@@ -204,24 +226,36 @@ void update(struct tgr_app *app){
                 site_domain = (char*)realloc(site_domain, dom_size + 2);
                 site_domain[dom_size] = key.unich;
                 site_domain[dom_size + 1] = '\0';
+            } else if (!is_in_search) {
+                struct LuaSEvent event = constr_event(KEY_EVENT);
+                event.mouse_x = mouse.x;
+                event.mouse_y = mouse.y;
+
+                event.unich = key.unich;
+                event.shifted = key.shifted;
+                event.alted = key.alted;
+                event.ctrled = key.ctrled;
+
+                if(!is_in_debug) lua_event_trigger(&scontext, &event);
             }
         }
         
         clear_qbuffer(&buffer);
     }
 
-    func_on_tick(state, app->deltaTime * 1000);
+    if(!is_in_debug) func_on_tick(&scontext, app->deltaTime * 1000);
 
     // WIDGETS =======================
-    if (main_cnt){
+    if (main_cnt && !is_in_debug){
         upd_container_focus(app, main_cnt, &mouse);
         upd_container(app, main_cnt, &mouse);
         update_positions(main_cnt);
-        // main_cnt->rect = main_cnt->orig_state;
+        main_cnt->rect.w = app->TERM_WIDTH;
+        main_cnt->rect.h = app->TERM_HEIGHT;
         draw_widget(app, main_cnt);
     }
 
-    if (is_in_search){
+    if (is_in_search && !is_in_debug){
         for (size_t i = 0; i < app->TERM_WIDTH - 1; i++){
             tgr_pixel(app, (struct rgb){255, 255, 255}, i, app->TERM_HEIGHT - 1, 0);
         }
@@ -234,16 +268,40 @@ void update(struct tgr_app *app){
         }
     }
     
+    if (is_in_debug){
+        for (size_t i = 0; i < MAX_DEBUG_LINES_NUM; i++){
+            if (SCRIPTS_DEBUG_LINES[i] == NULL) break;
+            bool is_it_last = (i == MAX_DEBUG_LINES_NUM - 1) || (SCRIPTS_DEBUG_LINES[i + 1] == NULL);
+            
+            int32_t *unistr;
+            char *local_buff = malloc(1 + strlen(SCRIPTS_DEBUG_LINES[i]) + 6);
+            if (repeated_logs == 0 || !is_it_last){
+                sprintf(local_buff, "%s", SCRIPTS_DEBUG_LINES[i]);
+            } else if (is_it_last && repeated_logs <= 99){
+                sprintf(local_buff, "[%d] %s", repeated_logs, SCRIPTS_DEBUG_LINES[i]);
+            } else if (is_it_last) {
+                sprintf(local_buff, "[99+] %s", SCRIPTS_DEBUG_LINES[i]);
+            }
+            
+            utf8_conv((uint8_t*)local_buff, &unistr);
+            free(local_buff);
+            rgb_string_insert(app, unistr, 0, i, (struct rgb){200, 200, 150});
+            free(unistr);
+        }
+    }
+
     tgr_pixel(app, (struct rgb){255, 0, 255}, mouse.x, mouse.y, 1);
     
     // FPS =======================
-    char fpsbuff[60];
-    sprintf(fpsbuff, "%ldx%ld\n%d", app->TERM_WIDTH, app->TERM_HEIGHT, app->fps);
+    if (!is_in_debug){
+        char fpsbuff[60];
+        sprintf(fpsbuff, "%ldx%ld\n%d", app->TERM_WIDTH, app->TERM_HEIGHT, app->fps);
 
-    int32_t *unistr;
-    utf8_conv((uint8_t*)fpsbuff, &unistr);
-    rgb_string_insert(app, unistr, 0, 0, (struct rgb){150, 200, 150});
-    free(unistr);
+        int32_t *unistr;
+        utf8_conv((uint8_t*)fpsbuff, &unistr);
+        rgb_string_insert(app, unistr, 0, 0, (struct rgb){150, 200, 150});
+        free(unistr);
+    }
 }
 
 void *detached(void *args){

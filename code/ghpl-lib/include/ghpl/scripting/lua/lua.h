@@ -5,13 +5,18 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-int init_script(lua_State *L, const char *path_to);
+struct ScriptingContext {
+    lua_State *state;
+    int event_ref;
+};
+
+int init_script(struct ScriptingContext *L, const char *path_to);
 
 bool ch_lua(lua_State *L, int result);
-void init_lua(lua_State **L);
-void end_lua(lua_State *L);
+void init_lua(struct ScriptingContext *L);
+void end_lua(struct ScriptingContext *L);
 
 // Functions
-int func_on_init(lua_State *L);
-int func_on_tick(lua_State *L, float dt_s);
+int func_on_init(struct ScriptingContext *L);
+int func_on_tick(struct ScriptingContext *L, float dt_s);
 // int func_on_event(lua_State *L);

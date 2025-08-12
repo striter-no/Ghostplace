@@ -2,7 +2,7 @@
 #include <ghpl/utils/strutils.h>
 #include <string.h>
 
-#define UPD_SECONDS_DELAY 60 * 60
+#define UPD_SECONDS_DELAY 60
 
 pthread_mutex_t sites_db_mtx = PTHREAD_MUTEX_INITIALIZER;
 

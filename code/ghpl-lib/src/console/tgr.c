@@ -67,6 +67,38 @@ void tgr_run(
         u64 cbegin = current_time_ms();
         i64 nbegin = get_time_ns();
 
+        size_t pnw, pnh;
+        term_dem(&pnw, &pnh);
+        pnw--;
+        if (pnw != app->TERM_WIDTH || pnh != app->TERM_HEIGHT){
+            app->pix_displ = (struct pixel*)realloc(app->pix_displ, sizeof(struct pixel) * pnw * pnh);
+            app->last_px_displ = (struct pixel*)realloc(app->last_px_displ, sizeof(struct pixel) * pnw * pnh);
+
+            for (u64 y = 0; y < pnh; y++){
+                for (u64 x = 0; x < pnw; x++){
+                    app->pix_displ[y * pnw + x] = (struct pixel){
+                        .color.r = app->background_clr.r,
+                        .color.g = app->background_clr.g,
+                        .color.b = app->background_clr.b,
+                        .bgcolor.r = app->background_clr.r,
+                        .bgcolor.g = app->background_clr.g,
+                        .bgcolor.b = app->background_clr.b,
+                        .unich = ' ',
+                        .fore_reset = 0,
+                        .back_reset = 0,
+                        .postfix = {0},
+                        .prefix = {0}
+                    };
+
+                    app->last_px_displ[y * pnw + x] = app->pix_displ[y * pnw + x];
+                }
+            }
+
+            app->TERM_WIDTH = pnw;
+            app->TERM_HEIGHT = pnh;
+            continue;
+        }
+
         for (u64 y = 0; y < app->TERM_HEIGHT; y++){
             for (u64 x = 0; x < app->TERM_WIDTH; x++){
                 tgr_tpix_set(app, (struct pixel){

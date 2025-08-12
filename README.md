@@ -19,7 +19,7 @@ sudo apt update
 sudo apt install liblua5.4-dev
 ```
 
-Скрипт установит библиотеку [utf8proc](https://github.com/JuliaStrings/utf8proc) в /usr/local/lib, если у вас ее нет. Также убедитесь, что компилятор видит путь `/usr/local/lib` 
+Скрипт установит библиотеку [utf8proc](https://github.com/JuliaStrings/utf8proc) в ./code/lib, если у вас ее нет в глобальных путях.
 
 #### Для сборки клиента
 
